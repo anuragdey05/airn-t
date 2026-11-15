@@ -1,0 +1,32 @@
+README.md
+  h_419a80373e9856 1-43
+src/App.tsx
+  h_419a80373e9856 1-933
+src/components/AcademicCitationsSection.tsx
+  h_419a80373e9856 1-89
+src/components/CigaretteVisualizer.tsx
+  h_419a80373e9856 1-235
+src/components/CityDuelComparison.tsx
+  h_419a80373e9856 1-357
+src/components/EconomicsCurveChart.tsx
+  h_419a80373e9856 1-412
+src/components/GlobalLeaderboard.tsx
+  h_419a80373e9856 1-165
+src/components/TimelineAndFinancials.tsx
+  h_419a80373e9856 1-232
+src/components/WarningReceiptModal.tsx
+  h_419a80373e9856 1-175
+src/main.tsx
+  h_419a80373e9856 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "918f0ade261619f2f6a663f5db44b8bde61f6655",
+  "prompts": {},
+  "humans": {
+    "h_419a80373e9856": {
+      "author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
