@@ -1,0 +1,24 @@
+src/App.tsx
+  h_419a80373e9856 19-21,29-30,40-41,44-45,47-48,79,99,105,109-113,202,263,281,292-293,297,302,304-312,314-322,328,348,355-366,371,381,391,397,399,402,409,411,416,424,438,445,449-450,453,458-480,482-515,518,520,523-530,536-537,539-542,546-559,561-573,575-578,581-582,584,587-601,603-609,612-633,635-643,646-660,662-668,671-765
+src/components/AnimatedCigarettePack.tsx
+  h_419a80373e9856 1-368
+src/components/ExposureBottomSheet.tsx
+  h_419a80373e9856 1-253
+src/components/GlobalLeaderboard.tsx
+  h_419a80373e9856 34,41-42,47-139,231
+src/components/ShouldYouSmokeCard.tsx
+  h_419a80373e9856 1-170
+src/index.css
+  h_419a80373e9856 15,33,37,44,48-49,65-73,75,79,83,90-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c181ce9cdc8e3f2360f68e1f05e9563dc52284ad",
+  "prompts": {},
+  "humans": {
+    "h_419a80373e9856": {
+      "author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
