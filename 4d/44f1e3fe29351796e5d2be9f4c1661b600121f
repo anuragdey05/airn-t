@@ -1,0 +1,81 @@
+src/components/AnimatedCigarettePack.tsx
+  s_1292af1bfe7809::t_3c5fd6d31d1221 54,83-86
+  s_1292af1bfe7809::t_4c282f90de0e88 1-3,6,20,22-23,25-44,51-53,55-82,87-108,110,112-114,116-124,126-136,138-149,151-155,160
+  s_dab3bb4aafc1a5::t_8560e52f5fb8a8 45-49
+  s_1292af1bfe7809::t_94a37326c72eb2 4
+src/components/CityDuelComparison.tsx
+  s_dab3bb4aafc1a5::t_2c047220b4cad5 1-2,18-19,33-34,46-52,77-80,82,92-98,104-106,108,119-125,150,161,268
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 154,174,176,188,199,217,220,240,246,251,257,270,274,283,286,306,312,317,323
+src/components/cigarette-pack.css
+  s_dab3bb4aafc1a5::t_8560e52f5fb8a8 62-63
+  s_dab3bb4aafc1a5::t_b2f5356615c948 64
+  s_1292af1bfe7809::t_3c5fd6d31d1221 7
+  s_1292af1bfe7809::t_4c282f90de0e88 1-6,8-61
+src/components/TimelineAndFinancials.tsx
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 51,64-65,77,82,99,105,112-113,127,150,156,162,168,174,180,186,192,214,228
+src/components/ExposureBottomSheet.tsx
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 2,43,46,62,72,80,105,118,123,146,171,173,181,196,203,210,212,237,242,258
+src/components/AcademicCitationsSection.tsx
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 31
+  s_dab3bb4aafc1a5::t_55bb4efe517216 35
+src/components/ShouldYouSmokeCard.tsx
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 68,72,76,102,111,120,133,135,157,165
+src/components/EconomicsCurveChart.tsx
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 106,116,118,130-131,134-135,165,190,237,295,302,359,363,375,387,401
+  s_dab3bb4aafc1a5::t_306e786a3ded20 104
+src/components/GlobalLeaderboard.tsx
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 64,72,79,84,88,96,102,108,119,127,142,175,182,187,191,204,229,237
+src/index.css
+  s_1292af1bfe7809::t_c44272fb9b8f0e 125-253
+  s_1292af1bfe7809::t_b33c1fc03d7299 262-264
+  s_1292af1bfe7809::t_94a37326c72eb2 254-261
+src/App.tsx
+  s_1292af1bfe7809::t_b33c1fc03d7299 441,462
+  s_dab3bb4aafc1a5::t_2c047220b4cad5 164,172,301-303,314,317-319,675-676
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 1-3,117-123,146,150,155,157,196,198-199,201,211,214-219,223-224,226,228,231-236,243-244,246,257,259-264,270-271,273,285,288,290-295,316,323-325,333,336-337,368,372,377,390,392,415,430,494,511,515,519,522,529-530,542,544,554-555,558,560,567,575,586,620,625-626,646,723,727,730,732,739,746,749,751,758,765,768,770,777,784,787,789,796
+src/hooks/useCitySearch.ts
+  s_1292af1bfe7809::t_105ca0f9ea46a6 1-21,23-33
+  s_dab3bb4aafc1a5::t_2c047220b4cad5 22
+src/lib/aqiService.ts
+  s_dab3bb4aafc1a5::t_2c047220b4cad5 215,223,226-227
+package.json
+  s_1292af1bfe7809::t_698f2d5c75413c 9-10
+  s_dab3bb4aafc1a5::t_b10b8fd89325c2 20-21,25,28-29
+  s_1292af1bfe7809::t_aeacca2d5cd460 13
+src/hooks/useAmbientMotion.ts
+  s_1292af1bfe7809::t_105ca0f9ea46a6 1-16
+src/components/WarningReceiptModal.tsx
+  s_1292af1bfe7809::t_c44272fb9b8f0e 27
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 1-2,26,28,38,42-43,45,50-51,55,68,83,87,124,145,150,156,180
+src/components/Dialog.tsx
+  s_dab3bb4aafc1a5::t_fc15eecc0e8a04 32
+  s_1292af1bfe7809::t_105ca0f9ea46a6 1-31,33-56
+package-lock.json
+  s_1292af1bfe7809::t_448e206c01a455 2,8,11,18-19,23,26-27,30-80,315-324,373-525,968-985,1745-1815,1861-1878,1927-1982,1996-2005,2061-2070,2078-2091,2099-2112,2131-2148,2159-2166,2188-2207,2260-2279,2330-2355,2373-2423,2736-2746,2757-2763,2800-2826,2876-2901,2923-2930,2941-2950,2997-3009,3036-3049,3071-3090,3108-3153,3168-3177,3284-3472
+public/brand/airnt-logo.svg
+  s_dab3bb4aafc1a5::t_f7d6f46f2a4c34 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4d44f1e3fe29351796e5d2be9f4c1661b600121f",
+  "prompts": {},
+  "sessions": {
+    "s_1292af1bfe7809": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e449-4d1b-7640-8267-1d7e23340e45",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Anurag Dey <anuragdey2k@gmail.com>"
+    },
+    "s_dab3bb4aafc1a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1e449-4d1b-7640-8267-1d7e23340e45",
+        "model": "unknown"
+      },
+      "human_author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
