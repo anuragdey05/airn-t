@@ -48,7 +48,7 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
                 Daily Passive Cigarette Trajectory in {cityName}
               </h3>
             </div>
-            <div className="flex items-center gap-3 text-[11px] font-mono-code">
+            <div className="flex items-center gap-3 text-xs font-mono-code">
               <span className="inline-flex items-center gap-1.5 text-stone-400">
                 <span className="w-2.5 h-2.5 rounded-xs bg-amber-500 inline-block" />
                 Observed
@@ -61,7 +61,8 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
           </div>
 
           {/* Bar Chart */}
-          <div className="grid grid-cols-10 gap-2 pt-4 pb-2 items-end h-52">
+          <div className="chart-scroll" tabIndex={0} role="region" aria-label="Daily cigarette timeline, scroll horizontally for all days">
+          <div className="timeline-grid grid grid-cols-10 gap-3 pt-4 pb-2 items-end h-64">
             {dailyTimeline.slice(0, 10).map((pt) => {
               const adjCigs = pt.cigsPerDay * exposureRatio;
               const heightPct = Math.max(8, Math.min(100, (adjCigs / maxDailyCigs) * 100));
@@ -73,12 +74,12 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
                   key={pt.date}
                   className="flex flex-col items-center justify-end h-full group relative"
                 >
-                  <span className="text-[10px] font-mono-code text-stone-300 mb-1">
+                  <span className="text-xs font-mono-code text-stone-300 mb-1">
                     {adjCigs.toFixed(1)}
                   </span>
                   <div className="w-full flex-1 flex items-end justify-center">
                     <div
-                      className={`w-full max-w-[34px] rounded-t-lg transition-all duration-300 ${
+                      className={`w-full max-w-[34px] rounded-t-lg transition-colors duration-300 ${
                         isToday
                           ? 'ring-2 ring-amber-400 shadow-lg shadow-amber-500/20'
                           : ''
@@ -95,19 +96,21 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
                     />
                   </div>
                   <span
-                    className={`mt-2 text-[10px] font-mono-code ${
+                    className={`mt-2 text-xs font-mono-code ${
                       isToday ? 'text-amber-300 font-bold' : 'text-stone-400'
                     }`}
                   >
                     {pt.label}
                   </span>
-                  <span className="text-[9px] font-mono-code text-stone-500">
+                  <span className="text-xs font-mono-code text-stone-400">
                     AQI {pt.usAqiAvg}
                   </span>
                 </div>
               );
             })}
           </div>
+          </div>
+          {!dailyTimeline.length && <p role="status" className="text-sm py-4 text-stone-300">No timeline is available for this location.</p>}
         </div>
 
         <div className="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between text-xs text-stone-400">
@@ -121,7 +124,7 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
               cigarettes
             </strong>
           </span>
-          <span className="font-mono-code text-[11px] text-stone-500">
+          <span className="font-mono-code text-xs text-stone-400">
             Source: Open-Meteo Hourly CAMS
           </span>
         </div>
@@ -144,49 +147,49 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
 
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="p-3.5 rounded-xl bg-stone-950/80 border border-stone-800">
-              <span className="text-[10px] font-mono-code uppercase text-stone-400">
+              <span className="text-xs font-mono-code uppercase text-stone-400">
                 Weekly Intake
               </span>
               <div className="text-xl font-mono-code font-bold text-stone-100 mt-0.5">
                 {economics.cigsPerWeek.toFixed(1)} <span className="text-xs font-normal text-stone-400">cigs</span>
               </div>
-              <div className="text-[11px] font-mono-code text-amber-400 mt-0.5">
+              <div className="text-xs font-mono-code text-amber-400 mt-0.5">
                 {weeklyPacks.toFixed(2)} packs / wk
               </div>
             </div>
 
             <div className="p-3.5 rounded-xl bg-stone-950/80 border border-stone-800">
-              <span className="text-[10px] font-mono-code uppercase text-stone-400">
+              <span className="text-xs font-mono-code uppercase text-stone-400">
                 Monthly Intake
               </span>
               <div className="text-xl font-mono-code font-bold text-stone-100 mt-0.5">
                 {economics.cigsPerMonth.toFixed(1)} <span className="text-xs font-normal text-stone-400">cigs</span>
               </div>
-              <div className="text-[11px] font-mono-code text-amber-400 mt-0.5">
+              <div className="text-xs font-mono-code text-amber-400 mt-0.5">
                 {monthlyPacks.toFixed(2)} packs / mo
               </div>
             </div>
 
             <div className="p-3.5 rounded-xl bg-stone-950/80 border border-stone-800">
-              <span className="text-[10px] font-mono-code uppercase text-stone-400">
+              <span className="text-xs font-mono-code uppercase text-stone-400">
                 Annual Habit
               </span>
               <div className="text-xl font-mono-code font-bold text-amber-300 mt-0.5">
                 {yearlyPacks.toFixed(1)} <span className="text-xs font-normal text-stone-400">packs</span>
               </div>
-              <div className="text-[11px] font-mono-code text-stone-400 mt-0.5">
+              <div className="text-xs font-mono-code text-stone-400 mt-0.5">
                 {Math.round(economics.cigsPerYear).toLocaleString()} cigs / yr
               </div>
             </div>
 
             <div className="p-3.5 rounded-xl bg-stone-950/80 border border-stone-800">
-              <span className="text-[10px] font-mono-code uppercase text-stone-400">
+              <span className="text-xs font-mono-code uppercase text-stone-400">
                 10-Year Lung Load
               </span>
               <div className="text-xl font-mono-code font-bold text-rose-300 mt-0.5">
                 {decadePacks.toFixed(0)} <span className="text-xs font-normal text-stone-400">packs</span>
               </div>
-              <div className="text-[11px] font-mono-code text-stone-400 mt-0.5">
+              <div className="text-xs font-mono-code text-stone-400 mt-0.5">
                 {(decadePacks / 10).toFixed(1)} cartons
               </div>
             </div>
@@ -208,6 +211,7 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
               min="2"
               max="25"
               step="0.5"
+              aria-label="Local pack price in US dollars"
               value={packPriceUsd}
               onChange={(e) => onChangePackPrice(parseFloat(e.target.value))}
               className="w-full noir-slider"
@@ -221,7 +225,7 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
           </div>
         </div>
 
-        <p className="text-[11px] text-stone-400 italic mt-3">
+        <p className="text-xs text-stone-400 italic mt-3">
           *Your alveoli absorb the equivalent of{' '}
           <strong className="text-stone-200">${yearlyStreetValue.toFixed(0)}</strong> worth of
           commercial tobacco particulates every year in {cityName}—with zero nicotine dividend.

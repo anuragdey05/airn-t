@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useCitySearch } from '../hooks/useCitySearch';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   CityAirQualityData,
   fetchAirQualityForCoords,
@@ -14,6 +15,8 @@ import {
 import { ArrowLeftRight, Search, MapPin, Sparkles, Loader2 } from 'lucide-react';
 
 interface CityDuelComparisonProps {
+  beginChallengerRequest: () => number;
+  isChallengerRequestCurrent: (id: number) => boolean;
   primaryCity: CityAirQualityData;
   challengerCity: CityAirQualityData;
   onSelectChallenger: (city: CityAirQualityData) => void;
@@ -27,6 +30,8 @@ interface CityDuelComparisonProps {
 }
 
 export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
+  beginChallengerRequest,
+  isChallengerRequestCurrent,
   primaryCity,
   challengerCity,
   onSelectChallenger,
@@ -38,9 +43,13 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
   packPriceUsd,
   waqiToken,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const search = useCitySearch();
+  const { query: searchQuery, results: searchResults, loading: isSearching } = search;
+  const handleSearchChange = search.change;
+  const requestId = useRef(0);
+  const [loadError, setLoadError] = useState('');
+  useEffect(() => () => { requestId.current++; }, []);
+  useEffect(() => { requestId.current++; setIsLoadingChallenger(false); }, [challengerCity]);
   const [isLoadingChallenger, setIsLoadingChallenger] = useState(false);
 
   const primaryEcon = calculateCigaretteEconomics({
@@ -64,22 +73,13 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
   const annualDeltaDollars = annualDeltaPacks * packPriceUsd;
   const propensityDelta = challengerEcon.smokingPropensityPct - primaryEcon.smokingPropensityPct;
 
-  const handleSearchChange = async (val: string) => {
-    setSearchQuery(val);
-    if (val.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
-    const res = await searchCitiesWorldwide(val);
-    setSearchResults(res);
-    setIsSearching(false);
-  };
-
   const handlePickGeoResult = async (geo: GeocodingResult) => {
-    setSearchResults([]);
-    setSearchQuery('');
+    search.change('');
+    const request = ++requestId.current;
+    const sharedRequest = beginChallengerRequest();
+    setLoadError('');
     setIsLoadingChallenger(true);
+    try {
     const data = await fetchAirQualityForCoords({
       city: geo.name,
       region: geo.admin1 || '',
@@ -89,14 +89,23 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
       longitude: geo.longitude,
       waqiToken,
     });
-    onSelectChallenger(data);
-    setIsLoadingChallenger(false);
+    if (request === requestId.current && isChallengerRequestCurrent(sharedRequest)) onSelectChallenger(data);
+
+    } catch {
+      if (request === requestId.current) setLoadError('Could not load the city. Choose it again to retry.');
+    } finally {
+      if (request === requestId.current) setIsLoadingChallenger(false);
+    }
   };
 
   const handleQuickBenchmark = async (seedId: string) => {
     const seed = GLOBAL_BENCHMARK_CITIES.find((c) => c.id === seedId);
     if (!seed) return;
+    const request = ++requestId.current;
+    const sharedRequest = beginChallengerRequest();
+    setLoadError('');
     setIsLoadingChallenger(true);
+    try {
     const data = await fetchAirQualityForCoords({
       city: seed.city,
       region: seed.region,
@@ -107,8 +116,13 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
       fallbackPm25: seed.fallbackPm25,
       waqiToken,
     });
-    onSelectChallenger(data);
-    setIsLoadingChallenger(false);
+    if (request === requestId.current && isChallengerRequestCurrent(sharedRequest)) onSelectChallenger(data);
+
+    } catch {
+      if (request === requestId.current) setLoadError('Could not load the city. Choose it again to retry.');
+    } finally {
+      if (request === requestId.current) setIsLoadingChallenger(false);
+    }
   };
 
   const primarySev = getAqiSeverity(primaryEcon.usAqi);
@@ -133,16 +147,18 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
             <Search className="w-4 h-4 text-stone-400 absolute left-3.5 pointer-events-none" />
             <input
               type="text"
+              aria-label="Search comparison city"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Compare with any city on Earth (e.g., Tokyo, Cairo, Austin)..."
-              className="w-full pl-9 pr-9 py-2 rounded-xl bg-stone-950 border border-stone-800 text-xs text-stone-100 placeholder:text-stone-500 focus:outline-none focus:border-amber-500/60"
+              className="w-full pl-9 pr-9 py-2 rounded-xl bg-stone-950 border border-stone-800 text-xs text-stone-100 placeholder:text-stone-400 focus:outline-none focus:border-amber-500/60"
             />
             {(isSearching || isLoadingChallenger) && (
               <Loader2 className="w-4 h-4 text-amber-400 animate-spin absolute right-3" />
             )}
           </div>
 
+          {(search.message || loadError) && <p role="status" className="search-message">{search.message || loadError}</p>}
           {searchResults.length > 0 && (
             <div className="absolute z-30 left-0 right-0 mt-1.5 rounded-xl bg-stone-950 border border-stone-700 shadow-2xl overflow-hidden max-h-64 overflow-y-auto">
               {searchResults.map((r) => (
@@ -155,9 +171,9 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
                   <div>
                     <span className="font-medium text-stone-100">{r.name}</span>
                     {r.admin1 && <span className="text-stone-400">, {r.admin1}</span>}
-                    <span className="text-stone-500"> — {r.country}</span>
+                    <span className="text-stone-400"> — {r.country}</span>
                   </div>
-                  <span className="font-mono-code text-[10px] text-amber-400 uppercase">
+                  <span className="font-mono-code text-xs text-amber-400 uppercase">
                     Compare →
                   </span>
                 </button>
@@ -169,7 +185,7 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
 
       {/* Quick preset pills */}
       <div className="flex items-center gap-1.5 flex-wrap mb-5">
-        <span className="text-[11px] font-mono-code uppercase text-stone-500 mr-1">
+        <span className="text-xs font-mono-code uppercase text-stone-400 mr-1">
           Quick Duel:
         </span>
         {GLOBAL_BENCHMARK_CITIES.slice(0, 8).map((c) => {
@@ -180,7 +196,7 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
               key={c.id}
               type="button"
               onClick={() => handleQuickBenchmark(c.id)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono-code transition-all border cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-mono-code transition-colors border cursor-pointer ${
                 isSelected
                   ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                   : 'bg-stone-950 text-stone-400 border-stone-800 hover:border-stone-700 hover:text-stone-200'
@@ -198,10 +214,10 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
         <div className="lg:col-span-5 rounded-xl border border-stone-800 bg-stone-950/70 p-4 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-[10px] font-mono-code uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <span className="text-xs font-mono-code uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
                 Origin // Your Baseline
               </span>
-              <span className={`text-[11px] font-mono-code px-2 py-0.5 rounded border ${primarySev.badgeClass}`}>
+              <span className={`text-xs font-mono-code px-2 py-0.5 rounded border ${primarySev.badgeClass}`}>
                 US AQI {primaryEcon.usAqi}
               </span>
             </div>
@@ -221,24 +237,24 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
 
           <div className="my-4 py-3 px-3.5 rounded-xl bg-stone-900/70 border border-stone-800/80 grid grid-cols-2 gap-3">
             <div>
-              <div className="text-[10px] font-mono-code uppercase text-stone-400">
+              <div className="text-xs font-mono-code uppercase text-stone-400">
                 Passive Cigs / Day
               </div>
               <div className="text-2xl font-mono-code font-bold text-amber-300 mt-0.5">
                 {primaryEcon.effectiveCigsPerDay.toFixed(2)}
               </div>
-              <div className="text-[11px] text-stone-400">
+              <div className="text-xs text-stone-400">
                 {primaryEcon.packsPerYear.toFixed(1)} packs / yr
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-mono-code uppercase text-stone-400">
+              <div className="text-xs font-mono-code uppercase text-stone-400">
                 Smoking Propensity
               </div>
               <div className="text-2xl font-mono-code font-bold text-rose-300 mt-0.5">
                 {primaryEcon.smokingPropensityPct}%
               </div>
-              <div className="text-[11px] text-stone-400">
+              <div className="text-xs text-stone-400">
                 -{primaryEcon.marginalDamageDiscountPct.toFixed(0)}% marginal harm
               </div>
             </div>
@@ -249,13 +265,13 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
         <div className="lg:col-span-1 flex flex-col items-center justify-center py-2">
           <button
             type="button"
-            onClick={onSwapPrimaryWithChallenger}
+            onClick={() => { requestId.current++; setIsLoadingChallenger(false); onSwapPrimaryWithChallenger(); }}
             title="Swap Primary & Challenger Cities"
-            className="p-2.5 rounded-full bg-stone-900 border border-stone-700 hover:border-amber-400 text-amber-300 hover:scale-105 transition-all cursor-pointer shadow-lg"
+            className="p-2.5 rounded-full bg-stone-900 border border-stone-700 hover:border-amber-400 text-amber-300 hover:scale-105 transition-colors cursor-pointer shadow-lg"
           >
             <ArrowLeftRight className="w-4 h-4" />
           </button>
-          <span className="text-[10px] font-mono-code text-stone-500 mt-1 uppercase">
+          <span className="text-xs font-mono-code text-stone-400 mt-1 uppercase">
             Swap
           </span>
         </div>
@@ -264,10 +280,10 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
         <div className="lg:col-span-5 rounded-xl border border-stone-800 bg-stone-950/70 p-4 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-[10px] font-mono-code uppercase tracking-wider px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">
+              <span className="text-xs font-mono-code uppercase tracking-wider px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">
                 Destination // Challenger
               </span>
-              <span className={`text-[11px] font-mono-code px-2 py-0.5 rounded border ${challengerSev.badgeClass}`}>
+              <span className={`text-xs font-mono-code px-2 py-0.5 rounded border ${challengerSev.badgeClass}`}>
                 US AQI {challengerEcon.usAqi}
               </span>
             </div>
@@ -287,24 +303,24 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
 
           <div className="my-4 py-3 px-3.5 rounded-xl bg-stone-900/70 border border-stone-800/80 grid grid-cols-2 gap-3">
             <div>
-              <div className="text-[10px] font-mono-code uppercase text-stone-400">
+              <div className="text-xs font-mono-code uppercase text-stone-400">
                 Passive Cigs / Day
               </div>
               <div className="text-2xl font-mono-code font-bold text-sky-300 mt-0.5">
                 {challengerEcon.effectiveCigsPerDay.toFixed(2)}
               </div>
-              <div className="text-[11px] text-stone-400">
+              <div className="text-xs text-stone-400">
                 {challengerEcon.packsPerYear.toFixed(1)} packs / yr
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-mono-code uppercase text-stone-400">
+              <div className="text-xs font-mono-code uppercase text-stone-400">
                 Smoking Propensity
               </div>
               <div className="text-2xl font-mono-code font-bold text-rose-300 mt-0.5">
                 {challengerEcon.smokingPropensityPct}%
               </div>
-              <div className="text-[11px] text-stone-400">
+              <div className="text-xs text-stone-400">
                 -{challengerEcon.marginalDamageDiscountPct.toFixed(0)}% marginal harm
               </div>
             </div>

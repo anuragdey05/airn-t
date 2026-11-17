@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { Dialog } from './Dialog';
+import React, { useState, useRef, useEffect } from 'react';
 import { CityAirQualityData } from '../lib/aqiService';
 import { EconomicBreakdown } from '../lib/economics';
 import { X, Copy, Check, AlertTriangle, Printer } from 'lucide-react';
@@ -22,7 +23,9 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
-  if (!isOpen) return null;
+  const [copyError, setCopyError] = useState('');
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const shareText = `🚬 airn't RECEIPT — ${cityData.city.toUpperCase()}
 • Live US AQI: ${economics.usAqi} (${cityData.pm25.toFixed(1)} µg/m³ PM2.5)
@@ -32,21 +35,24 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
 • Becker-Murphy Smoking Propensity: ${economics.smokingPropensityPct}% (${economics.verdictTitle})`;
 
   const handleCopy = async () => {
+    setCopyError('');
     try {
       await navigator.clipboard.writeText(shareText);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2200);
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => setCopied(false), 2200);
     } catch {
-      // ignore clipboard error
+      setCopyError('Could not copy. Try again or use Print / Save as PDF.');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="relative w-full max-w-md rounded-2xl bg-[#F4EFE6] text-stone-950 p-6 shadow-2xl border-4 border-stone-900 font-mono-code">
+    <Dialog open={isOpen} onClose={onClose} label="Atmospheric receipt">
+      <div className="receipt relative w-full max-w-md rounded-2xl bg-[#F4EFE6] text-stone-950 p-6 pt-16 shadow-2xl border-4 border-stone-900 font-mono-code">
         {/* Close button */}
         <button
           type="button"
+          aria-label="Close receipt"
           onClick={onClose}
           className="absolute top-3 right-3 p-1.5 rounded-lg bg-stone-900/10 hover:bg-stone-900/20 text-stone-900 cursor-pointer"
         >
@@ -59,7 +65,7 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
             <AlertTriangle className="w-4 h-4 text-stone-950 shrink-0" />
             <span>SURGEON GENERAL &amp; ECONOMIST WARNING</span>
           </div>
-          <p className="text-[11px] leading-snug font-sans font-semibold text-stone-900">
+          <p className="text-xs leading-snug font-sans font-semibold text-stone-900">
             Breathing ambient air in <span className="underline">{cityData.city}</span> forces your
             lungs to inhale the equivalent of{' '}
             <span>{economics.effectiveCigsPerDay.toFixed(2)} cigarettes per day</span>. Due to Pope
@@ -74,11 +80,11 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
           <div className="text-sm font-bold tracking-widest uppercase">
             airn&apos;t // TAR TAX RECEIPT
           </div>
-          <div className="text-[11px] text-stone-600">
+          <div className="text-xs text-stone-600">
             LOC: {cityData.city.toUpperCase()} ({cityData.latitude.toFixed(2)}°,{' '}
             {cityData.longitude.toFixed(2)}°)
           </div>
-          <div className="text-[10px] text-stone-500">
+          <div className="text-xs text-stone-400">
             SOURCE: {cityData.source} • {cityData.updatedAt}
           </div>
         </div>
@@ -115,7 +121,7 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
 
         {/* Marginal Utility Audit */}
         <div className="space-y-1.5 text-xs border-b border-dashed border-stone-400 pb-3 mb-4">
-          <div className="font-bold uppercase text-[11px] text-stone-700">
+          <div className="font-bold uppercase text-xs text-stone-700">
             BEHAVIORAL ECONOMICS AUDIT (+1 REAL CIG)
           </div>
           <div className="flex justify-between">
@@ -136,17 +142,18 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
             <span>MARGINAL SMOKING PROPENSITY</span>
             <span>{economics.smokingPropensityPct}%</span>
           </div>
-          <div className="text-[10px] text-stone-600 italic">
+          <div className="text-xs text-stone-600 italic">
             Persona: {economics.economicPersona}
           </div>
         </div>
 
+        <p role="status" className="copy-status text-sm mb-3">{copyError || (copied ? "Receipt copied." : "")}</p>
         {/* Actions */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleCopy}
-            className="flex-1 py-2.5 px-3 rounded-xl bg-stone-950 text-amber-300 hover:bg-stone-800 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="flex-1 py-2.5 px-3 rounded-xl bg-stone-950 text-amber-300 hover:bg-stone-800 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             {copied ? (
               <>
@@ -170,6 +177,6 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 };

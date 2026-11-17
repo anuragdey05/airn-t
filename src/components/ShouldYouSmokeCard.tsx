@@ -65,15 +65,15 @@ export const ShouldYouSmokeCard: React.FC<ShouldYouSmokeCardProps> = ({
 
   return (
     <div
-      className={`w-full max-w-md mx-auto rounded-3xl border-2 ${accentBorder} bg-gradient-to-b ${accentBg} p-5 shadow-2xl transition-all`}
+      className={`verdict-card w-full mx-auto rounded-3xl border-2 ${accentBorder} bg-gradient-to-b ${accentBg} p-5 shadow-2xl transition-colors`}
     >
       {/* Question Header & Persona Pill */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
-        <span className="text-[10px] font-mono-code uppercase tracking-widest text-stone-400">
+        <span className="text-xs font-mono-code uppercase tracking-widest text-stone-400">
           Should you go smoke a cigarette?
         </span>
         <span
-          className={`text-[10px] font-mono-code px-2 py-0.5 rounded-full border ${badgeClass}`}
+          className={`text-xs font-mono-code px-2 py-0.5 rounded-full border ${badgeClass}`}
         >
           {economicPersona}
         </span>
@@ -99,7 +99,7 @@ export const ShouldYouSmokeCard: React.FC<ShouldYouSmokeCardProps> = ({
       {/* 3-Pill Metric Strip */}
       <div className="grid grid-cols-3 gap-2 mb-4 font-mono-code text-center">
         <div className="p-2.5 rounded-2xl bg-stone-950/85 border border-stone-800/90">
-          <span className="text-[9px] uppercase text-stone-400 block">
+          <span className="text-xs uppercase text-stone-400 block">
             Smoke Likelihood
           </span>
           <span className="text-lg sm:text-xl font-bold text-rose-400">
@@ -108,7 +108,7 @@ export const ShouldYouSmokeCard: React.FC<ShouldYouSmokeCardProps> = ({
         </div>
 
         <div className="p-2.5 rounded-2xl bg-stone-950/85 border border-stone-800/90">
-          <span className="text-[9px] uppercase text-stone-400 block">
+          <span className="text-xs uppercase text-stone-400 block">
             Harm Discount
           </span>
           <span className="text-lg sm:text-xl font-bold text-emerald-400">
@@ -117,7 +117,7 @@ export const ShouldYouSmokeCard: React.FC<ShouldYouSmokeCardProps> = ({
         </div>
 
         <div className="p-2.5 rounded-2xl bg-stone-950/85 border border-stone-800/90">
-          <span className="text-[9px] uppercase text-stone-400 block">
+          <span className="text-xs uppercase text-stone-400 block">
             +1 Cig Load
           </span>
           <span className="text-lg sm:text-xl font-bold text-amber-300">
@@ -130,8 +130,9 @@ export const ShouldYouSmokeCard: React.FC<ShouldYouSmokeCardProps> = ({
       <div className="flex items-center gap-2">
         <button
           type="button"
+          aria-pressed={showMarginalCigPreview}
           onClick={onToggleMarginalPreview}
-          className={`flex-1 py-2.5 px-3.5 rounded-2xl text-xs font-mono-code font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
+          className={`flex-1 py-2.5 px-3.5 rounded-2xl text-xs font-mono-code font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer border ${
             showMarginalCigPreview
               ? 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/25'
               : 'bg-stone-900/95 hover:bg-stone-800 text-amber-300 border-amber-500/40'
@@ -153,7 +154,7 @@ export const ShouldYouSmokeCard: React.FC<ShouldYouSmokeCardProps> = ({
         <button
           type="button"
           onClick={onOpenScienceTab}
-          className="py-2.5 px-3.5 rounded-2xl bg-stone-950 hover:bg-stone-900 text-stone-300 hover:text-amber-300 border border-stone-800 text-xs font-mono-code flex items-center gap-1 transition-all cursor-pointer shrink-0"
+          className="py-2.5 px-3.5 rounded-2xl bg-stone-950 hover:bg-stone-900 text-stone-300 hover:text-amber-300 border border-stone-800 text-xs font-mono-code flex items-center gap-1 transition-colors cursor-pointer shrink-0"
         >
           <span>Proof</span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -161,7 +162,7 @@ export const ShouldYouSmokeCard: React.FC<ShouldYouSmokeCardProps> = ({
       </div>
 
       {isGo && (
-        <p className="text-[10px] text-stone-500 italic mt-2.5 text-center">
+        <p className="text-xs text-stone-400 italic mt-2.5 text-center">
           *Satirical behavioral-economics evaluation (Pope 2009 &amp; Becker-Murphy 1988), not medical advice.
         </p>
       )}

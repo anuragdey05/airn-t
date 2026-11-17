@@ -212,7 +212,7 @@ export const GLOBAL_BENCHMARK_CITIES: BenchmarkCitySeed[] = [
   },
 ];
 
-export async function searchCitiesWorldwide(query: string): Promise<GeocodingResult[]> {
+export async function searchCitiesWorldwide(query: string, reportErrors = false): Promise<GeocodingResult[]> {
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
   try {
@@ -220,10 +220,11 @@ export async function searchCitiesWorldwide(query: string): Promise<GeocodingRes
       trimmed
     )}&count=8&language=en&format=json`;
     const res = await fetch(url);
-    if (!res.ok) return [];
+    if (!res.ok) throw new Error('City search unavailable');
     const data = await res.json();
     return (data.results || []) as GeocodingResult[];
-  } catch {
+  } catch (error) {
+    if (reportErrors) throw error;
     return [];
   }
 }

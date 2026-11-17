@@ -61,7 +61,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
           return (
             <div
               key={item.id}
-              className={`p-3.5 rounded-2xl border transition-all ${
+              className={`p-3.5 rounded-2xl border transition-colors ${
                 isCurrent
                   ? 'bg-amber-500/10 border-amber-500/40'
                   : 'bg-stone-950/80 border-stone-800/80'
@@ -69,23 +69,23 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
             >
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono-code text-stone-500 font-bold">
+                  <span className="text-xs font-mono-code text-stone-400 font-bold">
                     #{idx + 1}
                   </span>
                   <div>
                     <div className="text-sm font-semibold text-stone-100 flex items-center gap-1.5">
                       <span>{item.city}</span>
                       {isCurrent && (
-                        <span className="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
+                        <span className="text-xs font-mono-code px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
                           ACTIVE
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] text-stone-400">{item.country}</span>
+                    <span className="text-xs text-stone-400">{item.country}</span>
                   </div>
                 </div>
                 <span
-                  className={`px-2 py-0.5 rounded text-[11px] font-mono-code border ${sev.badgeClass}`}
+                  className={`px-2 py-0.5 rounded text-xs font-mono-code border ${sev.badgeClass}`}
                 >
                   AQI {econ.usAqi}
                 </span>
@@ -93,19 +93,19 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
 
               <div className="grid grid-cols-3 gap-2 py-2 px-2.5 rounded-xl bg-stone-900/70 font-mono-code text-center mb-2.5">
                 <div>
-                  <span className="text-[9px] text-stone-400 block uppercase">Cigs/Day</span>
+                  <span className="text-xs text-stone-400 block uppercase">Cigs/Day</span>
                   <span className="text-sm font-bold text-amber-300">
                     {econ.effectiveCigsPerDay.toFixed(1)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-stone-400 block uppercase">Harm Disc.</span>
+                  <span className="text-xs text-stone-400 block uppercase">Harm Disc.</span>
                   <span className="text-sm font-bold text-emerald-400">
                     -{econ.marginalDamageDiscountPct.toFixed(0)}%
                   </span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-stone-400 block uppercase">Smoke %</span>
+                  <span className="text-xs text-stone-400 block uppercase">Smoke %</span>
                   <span className="text-sm font-bold text-rose-300">
                     {econ.smokingPropensityPct}%
                   </span>
@@ -116,7 +116,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                 <button
                   type="button"
                   onClick={() => onSelectAsPrimary(item)}
-                  className="flex-1 py-1.5 rounded-xl bg-stone-900 hover:bg-amber-500/20 text-stone-200 border border-stone-800 font-mono-code text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                  className="flex-1 py-1.5 rounded-xl bg-stone-900 hover:bg-amber-500/20 text-stone-200 border border-stone-800 font-mono-code text-xs flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <span>Load Pack</span>
                   <ArrowUpRight className="w-3 h-3" />
@@ -124,7 +124,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                 <button
                   type="button"
                   onClick={() => onSelectAsChallenger(item)}
-                  className="flex-1 py-1.5 rounded-xl bg-stone-900 hover:bg-sky-500/20 text-sky-300 border border-stone-800 font-mono-code text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                  className="flex-1 py-1.5 rounded-xl bg-stone-900 hover:bg-sky-500/20 text-sky-300 border border-stone-800 font-mono-code text-xs flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <Swords className="w-3 h-3" />
                   <span>Duel Above</span>
@@ -139,7 +139,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-stone-800 text-[11px] font-mono-code uppercase text-stone-400">
+            <tr className="border-b border-stone-800 text-xs font-mono-code uppercase text-stone-400">
               <th className="py-2.5 px-3">Rank</th>
               <th className="py-2.5 px-3">City</th>
               <th className="py-2.5 px-3">Live US AQI</th>
@@ -172,23 +172,23 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                       : 'hover:bg-stone-900/60'
                   }`}
                 >
-                  <td className="py-3 px-3 font-mono-code text-stone-500">
+                  <td className="py-3 px-3 font-mono-code text-stone-400">
                     #{idx + 1}
                   </td>
                   <td className="py-3 px-3">
                     <div className="font-medium text-stone-100 flex items-center gap-1.5">
                       <span>{item.city}</span>
                       {isCurrent && (
-                        <span className="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        <span className="text-xs font-mono-code px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
                           ACTIVE
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-stone-500">{item.country}</div>
+                    <div className="text-xs text-stone-400">{item.country}</div>
                   </td>
                   <td className="py-3 px-3">
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono-code border ${sev.badgeClass}`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono-code border ${sev.badgeClass}`}
                     >
                       {econ.usAqi}
                     </span>
@@ -201,7 +201,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                       <Flame className="w-3.5 h-3.5 text-amber-400" />
                       <span>{econ.effectiveCigsPerDay.toFixed(2)}</span>
                     </div>
-                    <span className="block text-[10px] font-mono-code text-stone-500">
+                    <span className="block text-xs font-mono-code text-stone-400">
                       {econ.packsPerYear.toFixed(1)} packs/yr
                     </span>
                   </td>
@@ -226,7 +226,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                       <button
                         type="button"
                         onClick={() => onSelectAsPrimary(item)}
-                        className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-amber-500/20 text-stone-300 hover:text-amber-300 border border-stone-800 hover:border-amber-500/40 font-mono-code text-[11px] inline-flex items-center gap-1 transition-all cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-amber-500/20 text-stone-300 hover:text-amber-300 border border-stone-800 hover:border-amber-500/40 font-mono-code text-xs inline-flex items-center gap-1 transition-colors cursor-pointer"
                       >
                         <span>Load Pack</span>
                         <ArrowUpRight className="w-3 h-3" />
@@ -234,7 +234,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                       <button
                         type="button"
                         onClick={() => onSelectAsChallenger(item)}
-                        className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-sky-500/20 text-stone-300 hover:text-sky-300 border border-stone-800 hover:border-sky-500/40 font-mono-code text-[11px] inline-flex items-center gap-1 transition-all cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-sky-500/20 text-stone-300 hover:text-sky-300 border border-stone-800 hover:border-sky-500/40 font-mono-code text-xs inline-flex items-center gap-1 transition-colors cursor-pointer"
                       >
                         <Swords className="w-3 h-3" />
                         <span>Duel</span>

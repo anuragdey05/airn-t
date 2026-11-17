@@ -101,8 +101,9 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
         <div className="inline-flex rounded-xl bg-stone-950 p-1 border border-stone-800">
           <button
             type="button"
+            aria-pressed={activeTab === 'pope_concave'}
             onClick={() => setActiveTab('pope_concave')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors cursor-pointer ${
               activeTab === 'pope_concave'
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                 : 'text-stone-400 hover:text-stone-200'
@@ -112,8 +113,9 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
           </button>
           <button
             type="button"
+            aria-pressed={activeTab === 'marginal_cost'}
             onClick={() => setActiveTab('marginal_cost')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors cursor-pointer ${
               activeTab === 'marginal_cost'
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                 : 'text-stone-400 hover:text-stone-200'
@@ -125,10 +127,12 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
       </div>
 
       {/* Interactive SVG Graph */}
-      <div className="w-full overflow-x-auto">
+      <p className="text-sm text-stone-300 mb-4">{cityName}: {economics.effectiveCigsPerDay.toFixed(2)} passive cigarettes/day; marginal harm discount {economics.marginalDamageDiscountPct.toFixed(0)}%; smoking propensity {economics.smokingPropensityPct}%. Scroll the chart horizontally on smaller screens.</p>
+      <div className="chart-scroll" tabIndex={0} role="region" aria-label="Economic model chart">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-auto select-none bg-stone-950/60 rounded-xl border border-stone-900"
+          role="img" aria-label={activeTab === 'pope_concave' ? 'Concave dose-response curve' : 'Marginal cost crossover curve'}
+          className="science-chart w-full h-auto select-none bg-stone-950/60 rounded-xl border border-stone-900"
         >
           <defs>
             <linearGradient id="amberArea" x1="0" y1="0" x2="0" y2="1">
@@ -158,7 +162,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
                   x={padLeft - 8}
                   y={y + 4}
                   textAnchor="end"
-                  className="fill-stone-500 text-[10px] font-mono-code"
+                  className="fill-stone-500 text-xs font-mono-code"
                 >
                   {label}
                 </text>
@@ -183,7 +187,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
                   x={x}
                   y={height - 14}
                   textAnchor="middle"
-                  className="fill-stone-400 text-[10px] font-mono-code"
+                  className="fill-stone-400 text-xs font-mono-code"
                 >
                   {val} cigs
                 </text>
@@ -230,7 +234,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
               <text
                 x={oneX + 6}
                 y={(zeroY_RR + oneY_RR) / 2 + 3}
-                className="fill-emerald-400 text-[10px] font-mono-code"
+                className="fill-emerald-400 text-xs font-mono-code"
               >
                 Clean Air ΔRisk (+{(economics.marginalHealthCostPristine * 100).toFixed(1)}%)
               </text>
@@ -288,14 +292,14 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
               <text
                 x={Math.min(width - 207, Math.max(padLeft + 18, curX - 72))}
                 y={Math.max(padTop + 18, curY_RR - 30)}
-                className="fill-amber-300 text-[10px] font-mono-code font-semibold"
+                className="fill-amber-300 text-xs font-mono-code font-semibold"
               >
                 {cityName}: {economics.effectiveCigsPerDay.toFixed(2)} cigs/day
               </text>
               <text
                 x={Math.min(width - 207, Math.max(padLeft + 18, curX - 72))}
                 y={Math.max(padTop + 31, curY_RR - 17)}
-                className="fill-rose-300 text-[10px] font-mono-code"
+                className="fill-rose-300 text-xs font-mono-code"
               >
                 +1 Cig ΔRisk: +{(economics.marginalHealthCostCurrent * 100).toFixed(2)}% (-
                 {economics.marginalDamageDiscountPct.toFixed(0)}% cost)
@@ -352,11 +356,11 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
                   stroke="rgba(255,255,255,0.08)"
                 />
                 <circle cx="14" cy="14" r="4" fill="#10B981" />
-                <text x="24" y="18" className="fill-emerald-300 text-[10px] font-mono-code">
+                <text x="24" y="18" className="fill-emerald-300 text-xs font-mono-code">
                   Marginal Health Cost MC(C) [{curMcPct.toFixed(0)}% of clean air]
                 </text>
                 <circle cx="14" cy="31" r="4" fill="#F43F5E" />
-                <text x="24" y="35" className="fill-rose-300 text-[10px] font-mono-code">
+                <text x="24" y="35" className="fill-rose-300 text-xs font-mono-code">
                   Marginal Smoking Propensity P(Smoke) [{economics.smokingPropensityPct}%]
                 </text>
               </g>
@@ -368,7 +372,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
       {/* Concise Mathematical Proof Box */}
       <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
         <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80">
-          <div className="font-mono-code text-amber-400 uppercase text-[11px] mb-1">
+          <div className="font-mono-code text-amber-400 uppercase text-xs mb-1">
             1. Concave Dose-Response
           </div>
           <p className="text-stone-300 leading-relaxed">
@@ -380,7 +384,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
         </div>
 
         <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80">
-          <div className="font-mono-code text-emerald-400 uppercase text-[11px] mb-1 flex items-center gap-1">
+          <div className="font-mono-code text-emerald-400 uppercase text-xs mb-1 flex items-center gap-1">
             <TrendingDown className="w-3.5 h-3.5" />
             <span>2. Marginal Damage Discount</span>
           </div>
@@ -394,7 +398,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
         </div>
 
         <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80">
-          <div className="font-mono-code text-rose-400 uppercase text-[11px] mb-1 flex items-center gap-1">
+          <div className="font-mono-code text-rose-400 uppercase text-xs mb-1 flex items-center gap-1">
             <BookOpen className="w-3.5 h-3.5" />
             <span>3. Weber-Fechner & Competing Risk</span>
           </div>

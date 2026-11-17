@@ -28,10 +28,11 @@ export const AcademicCitationsSection: React.FC = () => {
           return (
             <div
               key={paper.id}
-              className="rounded-xl border border-stone-800/90 bg-stone-950/70 overflow-hidden transition-all"
+              className="rounded-xl border border-stone-800/90 bg-stone-950/70 overflow-hidden transition-colors"
             >
               <button
                 type="button"
+                aria-expanded={isOpen}
                 onClick={() => setExpandedId(isOpen ? null : paper.id)}
                 className="w-full text-left px-4 py-3.5 flex items-center justify-between gap-4 hover:bg-stone-900/50 transition-colors cursor-pointer"
               >

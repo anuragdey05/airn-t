@@ -1,4 +1,5 @@
 import React from 'react';
+import { Dialog } from './Dialog';
 import {
   ACTIVITY_LEVELS,
   ActivityLevel,
@@ -39,10 +40,10 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
   onChangeCravingUtility,
   economics,
 }) => {
-  if (!isOpen) return null;
+
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm">
+    <Dialog open={isOpen} onClose={onClose} label="Tune exposure and simulate AQI" sheet>
       <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-[#13100E] border-t-2 sm:border-2 border-stone-700/90 p-5 sm:p-6 shadow-2xl max-h-[88vh] overflow-y-auto">
         {/* Drag handle for mobile */}
         <div className="w-12 h-1.5 rounded-full bg-stone-700 mx-auto mb-3 sm:hidden" />
@@ -58,6 +59,7 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close exposure settings"
             className="p-1.5 rounded-xl bg-stone-900 text-stone-400 hover:text-stone-100 cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -67,7 +69,7 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
         {/* Sticky Live Output Mini-Bar */}
         <div className="p-3 rounded-2xl bg-stone-950 border border-amber-500/30 mb-5 flex items-center justify-between font-mono-code text-xs">
           <div>
-            <span className="text-[10px] text-stone-400 block uppercase">
+            <span className="text-xs text-stone-400 block uppercase">
               Passive Cigarettes
             </span>
             <span className="text-lg font-bold text-amber-300">
@@ -75,7 +77,7 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
             </span>
           </div>
           <div className="text-right">
-            <span className="text-[10px] text-stone-400 block uppercase">
+            <span className="text-xs text-stone-400 block uppercase">
               Smoke Propensity
             </span>
             <span className="text-lg font-bold text-rose-400">
@@ -100,7 +102,7 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
                   <button
                     type="button"
                     onClick={() => onChangeManualPm25(null)}
-                    className="px-2 py-0.5 rounded bg-stone-800 text-[10px] font-mono-code text-amber-300 flex items-center gap-1 cursor-pointer"
+                    className="px-2 py-0.5 rounded bg-stone-800 text-xs font-mono-code text-amber-300 flex items-center gap-1 cursor-pointer"
                   >
                     <RotateCcw className="w-2.5 h-2.5" />
                     <span>Live</span>
@@ -113,11 +115,12 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
               min="1"
               max="350"
               step="1"
+              aria-label="Simulated PM2.5 in micrograms per cubic meter"
               value={activePm25}
               onChange={(e) => onChangeManualPm25(parseFloat(e.target.value))}
               className="w-full noir-slider"
             />
-            <div className="flex justify-between text-[10px] font-mono-code text-stone-500 mt-1">
+            <div className="flex justify-between text-xs font-mono-code text-stone-400 mt-1">
               <span>Clean (5)</span>
               <span>1 Cig (22)</span>
               <span>5 Cigs (110)</span>
@@ -140,6 +143,7 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
               min="0"
               max="24"
               step="0.5"
+              aria-label="Hours outdoors per day"
               value={hoursOutdoors}
               onChange={(e) => onChangeHoursOutdoors(parseFloat(e.target.value))}
               className="w-full noir-slider"
@@ -164,8 +168,9 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
                   <button
                     key={lvl}
                     type="button"
+                    aria-pressed={active}
                     onClick={() => onChangeActivityLevel(lvl)}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-xl border text-left transition-colors cursor-pointer ${
                       active
                         ? 'bg-amber-500/20 border-amber-500/50 text-amber-200'
                         : 'bg-stone-950 border-stone-800 text-stone-400'
@@ -173,7 +178,7 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
                   >
                     <div className="text-xs font-semibold flex items-center justify-between">
                       <span>{meta.label}</span>
-                      <span className="font-mono-code text-[10px] text-amber-400">
+                      <span className="font-mono-code text-xs text-amber-400">
                         {meta.ventilationMultiplier}x
                       </span>
                     </div>
@@ -188,22 +193,23 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
             <div className="flex items-center gap-2.5">
               <ShieldCheck
                 className={`w-4 h-4 ${
-                  indoorPurifier ? 'text-emerald-400' : 'text-stone-500'
+                  indoorPurifier ? 'text-emerald-400' : 'text-stone-400'
                 }`}
               />
               <div>
                 <div className="text-xs font-medium text-stone-200">
                   Indoor Air Purifier (HEPA)
                 </div>
-                <div className="text-[11px] text-stone-400">
+                <div className="text-xs text-stone-400">
                   Cuts indoor PM2.5 infiltration from 55% to 15%
                 </div>
               </div>
             </div>
             <button
               type="button"
+              role="switch" aria-checked={indoorPurifier} aria-label="Indoor HEPA air purifier"
               onClick={onTogglePurifier}
-              className={`px-3 py-1 rounded-lg text-xs font-mono-code font-semibold border transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg text-xs font-mono-code font-semibold border transition-colors cursor-pointer ${
                 indoorPurifier
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                   : 'bg-stone-900 text-stone-400 border-stone-700'
@@ -228,11 +234,12 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
               min="5"
               max="95"
               step="5"
+              aria-label="Nicotine craving"
               value={baselineCravingUtility}
               onChange={(e) => onChangeCravingUtility(parseInt(e.target.value, 10))}
               className="w-full noir-slider"
             />
-            <div className="flex justify-between text-[10px] font-mono-code text-stone-500 mt-1">
+            <div className="flex justify-between text-xs font-mono-code text-stone-400 mt-1">
               <span>Non-Smoker (5)</span>
               <span>Curious / Social (50)</span>
               <span>Strong Craving (95)</span>
@@ -248,6 +255,6 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 };
