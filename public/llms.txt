@@ -29,5 +29,5 @@
 
 ## Links
 
-- App: https://airnt.vercel.app/
+- App: https://airn-t.vercel.app/
 - Source: https://github.com/anuragdey05/airn-t

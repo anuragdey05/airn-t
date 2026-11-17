@@ -17,4 +17,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://airnt.vercel.app/sitemap.xml
+Sitemap: https://airn-t.vercel.app/sitemap.xml
