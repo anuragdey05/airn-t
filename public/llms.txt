@@ -1,0 +1,33 @@
+# airn't
+
+> airn't is a free web app that converts the live air quality (US AQI / PM2.5) at any location into the equivalent number of cigarettes smoked per day, and gives a satirical behavioural-economics verdict on whether you "might as well" smoke.
+
+## Core facts
+
+- Conversion rule: 22 µg/m³ of 24-hour average PM2.5 ≈ 1 cigarette per day (Berkeley Earth, Muller & Muller 2015). Cigarettes/day = PM2.5 ÷ 22.
+- Exposure is adjusted for hours outdoors, breathing rate (activity level, 1.0×–2.8×) and indoor infiltration (55% normally, 15% with a HEPA purifier).
+- Data: Open-Meteo Air Quality API (Copernicus CAMS, global coverage), optionally fused with WAQI (aqicn.org) ground stations.
+- Marginal-utility verdict: uses the concave dose-response curve from Pope et al. (2009, Circulation) — each extra cigarette adds less relative risk when baseline pollution is already high — combined with Becker & Murphy (1988) rational addiction and Kahneman & Tversky (1979) reference dependence. It is satire, not medical advice.
+
+## AQI to cigarettes per day (full-day outdoor exposure)
+
+| US AQI | PM2.5 (µg/m³) | Cigarettes/day |
+|---|---|---|
+| 50 | 12 | 0.5 |
+| 100 | 35 | 1.6 |
+| 150 | 55 | 2.5 |
+| 200 | 150 | 6.8 |
+| 300 | 250 | 11.4 |
+| 400 | 350 | 15.9 |
+
+## Features
+
+- Live AQI → cigarettes for your location or any city worldwide
+- City-vs-city comparison and a global leaderboard (Delhi, Lahore, Beijing, Cairo, Jakarta, Mexico City, Los Angeles, New York, London, Tokyo, Zurich, Reykjavik)
+- 7-day history, 3-day forecast, and yearly pack / street-value equivalents
+- Shareable "warning label" receipt
+
+## Links
+
+- App: https://airnt.vercel.app/
+- Source: https://github.com/anuragdey05/airn-t
