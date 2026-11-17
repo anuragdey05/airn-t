@@ -1,0 +1,28 @@
+tests/ui.test.tsx
+  s_1292af1bfe7809::t_698f2d5c75413c 1-95
+  s_dab3bb4aafc1a5::t_8560e52f5fb8a8 96-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b7fc14986ed9e229f15658f1ffd8eec80158f5a2",
+  "prompts": {},
+  "sessions": {
+    "s_1292af1bfe7809": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e449-4d1b-7640-8267-1d7e23340e45",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Anurag Dey <anuragdey2k@gmail.com>"
+    },
+    "s_dab3bb4aafc1a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a1e449-4d1b-7640-8267-1d7e23340e45",
+        "model": "unknown"
+      },
+      "human_author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
