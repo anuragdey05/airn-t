@@ -142,7 +142,7 @@ export const AnimatedCigarettePack: React.FC<AnimatedCigarettePackProps> = ({
               <div className="carton-brand"><span>airn’t</span><small>{cityName}</small></div>
               <div className="carton-gold-rule" />
               <div className="carton-reading">
-                <div className="carton-telemetry font-mono-code"><span style={{color: severity.colorHex}}>AQI {usAqi}</span><span>PM2.5 · {pm25.toFixed(1)} µg/m³</span></div>
+                <div className="carton-telemetry font-mono-code"><span style={{color: severity.colorHex}}>AQI {usAqi}</span><span>24h PM2.5 · {pm25.toFixed(1)} µg/m³</span></div>
                 <div className="carton-total"><span className="text-6xl font-mono-code">{cigsPerDay.toFixed(1)}</span>{showMarginalCigPreview && <span className="carton-plus">+1</span>}</div>
                 <div className="carton-dose-label">Passive Cigarettes Today</div>
                 <p className="carton-frequency">{cigsPerDay >= .05 ? <>Inhaling <strong>1 cigarette</strong> every <strong>{(24 / cigsPerDay).toFixed(1)} hours</strong> in {cityName}</> : <>Virtually zero passive cigarettes today in {cityName}</>}</p>

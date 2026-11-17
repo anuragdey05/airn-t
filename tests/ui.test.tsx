@@ -6,8 +6,20 @@ import { useCitySearch } from '../src/hooks/useCitySearch';
 import { Dialog } from '../src/components/Dialog';
 import { AnimatedCigarettePack } from '../src/components/AnimatedCigarettePack';
 import { getAqiSeverity } from '../src/lib/economics';
-import { searchCitiesWorldwide } from '../src/lib/aqiService';
-vi.mock('../src/lib/aqiService', () => ({ searchCitiesWorldwide: vi.fn() }));
+import {
+  searchCitiesWorldwide,
+  computeTrailing24hMeanPm25,
+  getLocalIsoDateAndHour,
+  getPackPriceForCountry,
+} from '../src/lib/aqiService';
+import { buildCityShareUrl } from '../src/lib/shareCard';
+vi.mock('../src/lib/aqiService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/lib/aqiService')>();
+  return {
+    ...actual,
+    searchCitiesWorldwide: vi.fn(),
+  };
+});
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 beforeEach(() => { vi.useFakeTimers(); vi.mocked(searchCitiesWorldwide).mockReset(); });
 const city = (name: string) => ({ id: 1, name, latitude: 0, longitude: 0, country: 'Test', country_code: 'TT', admin1: '' });
@@ -116,5 +128,39 @@ describe('physical pack preview', () => {
     expect(extra.disabled).toBe(true);
     expect(extra.style.visibility).toBe('hidden');
     vi.unstubAllGlobals();
+  });
+});
+
+describe('24h mean PM2.5, local timezone & share helpers', () => {
+  it('computes trailing 24h mean PM2.5 up to the current local hour', () => {
+    const times = Array.from({ length: 30 }, (_, i) => {
+      const h = String(i % 24).padStart(2, '0');
+      const day = i < 24 ? '2026-11-17' : '2026-11-18';
+      return `${day}T${h}:00`;
+    });
+    // First 6 hours = 100, next 24 hours = 44
+    const pms = times.map((_, i) => (i < 6 ? 100 : 44));
+    const mean = computeTrailing24hMeanPm25(times, pms, '2026-11-18T05:00');
+    expect(mean).toBe(44.0);
+  });
+
+  it('computes local todayIso accurately across positive and negative UTC offsets', () => {
+    // 2026-11-17T22:30:00Z is already 2026-11-18T04:00 in India (+5:30 = +19800s)
+    const utcMs = Date.parse('2026-11-17T22:30:00Z');
+    const india = getLocalIsoDateAndHour(19800, utcMs);
+    expect(india.todayIso).toBe('2026-11-18');
+    expect(india.currentHourIso).toBe('2026-11-18T04:00');
+
+    // At 2026-11-18T03:00:00Z, New York (UTC-5 = -18000s) is still 2026-11-17T22:00
+    const nyMs = Date.parse('2026-11-18T03:00:00Z');
+    const ny = getLocalIsoDateAndHour(-18000, nyMs);
+    expect(ny.todayIso).toBe('2026-11-17');
+    expect(ny.currentHourIso).toBe('2026-11-17T22:00');
+  });
+
+  it('resolves country pack prices and builds encoded city deep-link URLs', () => {
+    expect(getPackPriceForCountry('IN')).toBe(4.2);
+    expect(getPackPriceForCountry('GB')).toBe(19.8);
+    expect(buildCityShareUrl('New Delhi')).toContain('?city=New+Delhi');
   });
 });
