@@ -1,0 +1,22 @@
+.gitignore
+  h_419a80373e9856 30-33
+index.html
+  h_419a80373e9856 15,30-31,41,50,52-54
+public/llms.txt
+  h_419a80373e9856 32
+public/robots.txt
+  h_419a80373e9856 20
+public/sitemap.xml
+  h_419a80373e9856 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a8a2130d78b29059ac5f4b24ca0d7aa9061ef549",
+  "prompts": {},
+  "humans": {
+    "h_419a80373e9856": {
+      "author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
