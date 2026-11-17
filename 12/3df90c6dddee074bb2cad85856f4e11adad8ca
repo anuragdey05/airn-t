@@ -1,0 +1,18 @@
+api/og.ts
+  h_419a80373e9856 1-64
+src/components/WarningReceiptModal.tsx
+  h_419a80373e9856 5-22,42-45,47,50-80,83,87,89-107,113-138,141-148,151-184,186-210,212-292,294,296-300,302-311,315-316,319,321,323,325
+src/lib/shareCard.ts
+  h_419a80373e9856 1-387
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "123df90c6dddee074bb2cad85856f4e11adad8ca",
+  "prompts": {},
+  "humans": {
+    "h_419a80373e9856": {
+      "author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
