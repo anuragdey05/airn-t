@@ -17,14 +17,17 @@ export interface CityAirQualityData {
   countryCode: string;
   latitude: number;
   longitude: number;
-  pm25: number; // µg/m³
+  pm25: number; // 24-hour trailing mean PM2.5 (µg/m³) — used for Berkeley Earth cigarette conversion
+  currentPm25?: number; // Instantaneous current-hour PM2.5 (µg/m³)
+  currentUsAqi?: number; // Instantaneous current-hour AQI
   pm10: number; // µg/m³
   no2: number; // µg/m³
   o3: number; // µg/m³
-  usAqi: number;
+  usAqi: number; // 24-hour US EPA AQI
   source: 'Hybrid (WAQI Ground Station + Open-Meteo CAMS)' | 'Open-Meteo CAMS Global' | 'Manual Simulator';
   stationName?: string;
   updatedAt: string;
+  fetchedAtMs?: number;
   dailyTimeline: DailyExposurePoint[];
 }
 
@@ -212,6 +215,96 @@ export const GLOBAL_BENCHMARK_CITIES: BenchmarkCitySeed[] = [
   },
 ];
 
+const COUNTRY_PACK_PRICE_USD: Record<string, number> = {
+  AU: 26.0,
+  NZ: 24.0,
+  GB: 19.8,
+  IE: 18.0,
+  NO: 15.5,
+  CA: 13.5,
+  FR: 13.0,
+  SG: 11.8,
+  US: 11.5,
+  IS: 11.9,
+  CH: 10.8,
+  NL: 10.5,
+  DE: 9.2,
+  IT: 6.8,
+  ES: 6.5,
+  AE: 6.0,
+  MX: 4.5,
+  IN: 4.2,
+  JP: 4.1,
+  KR: 3.6,
+  CN: 3.5,
+  ZA: 3.2,
+  ID: 2.6,
+  BR: 2.5,
+  PK: 2.1,
+  EG: 1.9,
+  VN: 1.6,
+  NG: 1.5,
+};
+
+export function getPackPriceForCountry(countryCode?: string): number {
+  if (!countryCode) return 10.5;
+  const code = countryCode.trim().toUpperCase();
+  return COUNTRY_PACK_PRICE_USD[code] ?? 10.5;
+}
+
+/**
+ * Computes the local YYYY-MM-DD and YYYY-MM-DDTHH:00 for a location given its UTC offset in seconds.
+ * Avoids the UTC toISOString() day-shift bug in timezones ahead/behind UTC.
+ */
+export function getLocalIsoDateAndHour(
+  utcOffsetSeconds?: number,
+  nowMs: number = Date.now()
+): { todayIso: string; currentHourIso: string } {
+  const offsetSec =
+    typeof utcOffsetSeconds === 'number' && !Number.isNaN(utcOffsetSeconds)
+      ? utcOffsetSeconds
+      : -new Date(nowMs).getTimezoneOffset() * 60;
+
+  const localShifted = new Date(nowMs + offsetSec * 1000);
+  const iso = localShifted.toISOString(); // now represents local wall-clock time
+  return {
+    todayIso: iso.slice(0, 10),
+    currentHourIso: iso.slice(0, 13) + ':00',
+  };
+}
+
+/**
+ * Computes the trailing 24-hour mean PM2.5 (µg/m³) ending at `currentHourIso` (or the latest past hour).
+ * Berkeley Earth's 22 µg/m³ = 1 cigarette/day equivalence is defined on 24-hour average exposure.
+ */
+export function computeTrailing24hMeanPm25(
+  times: string[],
+  pms: (number | null | undefined)[],
+  currentHourIso: string
+): number | null {
+  if (!times?.length || !pms?.length) return null;
+
+  const validPairs: Array<{ time: string; val: number }> = [];
+  const len = Math.min(times.length, pms.length);
+  for (let i = 0; i < len; i++) {
+    const v = pms[i];
+    const t = times[i];
+    if (typeof t === 'string' && typeof v === 'number' && !Number.isNaN(v) && v >= 0) {
+      validPairs.push({ time: t, val: v });
+    }
+  }
+  if (validPairs.length === 0) return null;
+
+  // Filter up to currentHourIso
+  const upToNow = validPairs.filter((p) => p.time <= currentHourIso);
+  const windowSource = upToNow.length >= 6 ? upToNow : validPairs.slice(0, 24);
+  const trailing24 = windowSource.slice(-24);
+
+  if (trailing24.length === 0) return null;
+  const mean = trailing24.reduce((acc, item) => acc + item.val, 0) / trailing24.length;
+  return Number(mean.toFixed(1));
+}
+
 export async function searchCitiesWorldwide(query: string, reportErrors = false): Promise<GeocodingResult[]> {
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
@@ -229,21 +322,21 @@ export async function searchCitiesWorldwide(query: string, reportErrors = false)
   }
 }
 
-function buildFallbackTimeline(basePm25: number): DailyExposurePoint[] {
+function buildFallbackTimeline(basePm25: number, utcOffsetSeconds?: number): DailyExposurePoint[] {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const now = new Date();
+  const { todayIso } = getLocalIsoDateAndHour(utcOffsetSeconds);
+  const baseDate = new Date(todayIso + 'T12:00:00Z');
   const points: DailyExposurePoint[] = [];
   const multipliers = [0.88, 0.95, 1.12, 1.04, 0.91, 0.97, 1.0, 1.06, 0.94, 0.89];
 
   for (let offset = -6; offset <= 3; offset++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() + offset);
+    const d = new Date(baseDate.getTime() + offset * 86400_000);
     const iso = d.toISOString().slice(0, 10);
     const mult = multipliers[offset + 6] ?? 1.0;
     const pm = Number(Math.max(1.5, basePm25 * mult).toFixed(1));
     points.push({
       date: iso,
-      label: offset === 0 ? 'Today' : days[d.getDay()],
+      label: offset === 0 ? 'Today' : days[d.getUTCDay()],
       pm25Avg: pm,
       usAqiAvg: pm25ToUsAqi(pm),
       cigsPerDay: Number((pm / 22).toFixed(2)),
@@ -255,7 +348,7 @@ function buildFallbackTimeline(basePm25: number): DailyExposurePoint[] {
 
 /**
  * Fetches live Air Quality from Open-Meteo CAMS + optional WAQI ground station override.
- * Includes past 6 days + today + 3 forecast days hourly PM2.5 aggregated into daily points.
+ * Uses trailing 24-hour average PM2.5 for the cigarette conversion while preserving instantaneous AQI context.
  */
 export async function fetchAirQualityForCoords(params: {
   city: string;
@@ -279,7 +372,9 @@ export async function fetchAirQualityForCoords(params: {
   } = params;
 
   let pm25 = fallbackPm25;
-  let pm10 = fallbackPm25 * 1.6;
+  let currentPm25 = fallbackPm25;
+  let currentUsAqi = pm25ToUsAqi(fallbackPm25);
+  let pm10 = Number((fallbackPm25 * 1.5).toFixed(1));
   let no2 = 18.0;
   let o3 = 42.0;
   let usAqi = pm25ToUsAqi(fallbackPm25);
@@ -297,24 +392,49 @@ export async function fetchAirQualityForCoords(params: {
     const res = await fetch(openMeteoUrl);
     if (res.ok) {
       const data = await res.json();
+      const utcOffsetSeconds: number | undefined =
+        typeof data.utc_offset_seconds === 'number' ? data.utc_offset_seconds : undefined;
+      const { todayIso, currentHourIso } = getLocalIsoDateAndHour(utcOffsetSeconds);
+
       if (data.current) {
         if (typeof data.current.pm2_5 === 'number') {
-          pm25 = Number(data.current.pm2_5.toFixed(1));
+          currentPm25 = Number(data.current.pm2_5.toFixed(1));
+          pm25 = currentPm25;
         } else if (typeof data.current.us_aqi === 'number') {
-          pm25 = usAqiToPm25(data.current.us_aqi);
+          currentPm25 = usAqiToPm25(data.current.us_aqi);
+          pm25 = currentPm25;
         }
-        pm10 = typeof data.current.pm10 === 'number' ? Number(data.current.pm10.toFixed(1)) : Number((pm25 * 1.5).toFixed(1));
-        no2 = typeof data.current.nitrogen_dioxide === 'number' ? Number(data.current.nitrogen_dioxide.toFixed(1)) : 16.0;
-        o3 = typeof data.current.ozone === 'number' ? Number(data.current.ozone.toFixed(1)) : 44.0;
-        usAqi = typeof data.current.us_aqi === 'number' ? Math.round(data.current.us_aqi) : pm25ToUsAqi(pm25);
+        pm10 =
+          typeof data.current.pm10 === 'number'
+            ? Number(data.current.pm10.toFixed(1))
+            : Number((currentPm25 * 1.5).toFixed(1));
+        no2 =
+          typeof data.current.nitrogen_dioxide === 'number'
+            ? Number(data.current.nitrogen_dioxide.toFixed(1))
+            : 16.0;
+        o3 =
+          typeof data.current.ozone === 'number'
+            ? Number(data.current.ozone.toFixed(1))
+            : 44.0;
+        currentUsAqi =
+          typeof data.current.us_aqi === 'number'
+            ? Math.round(data.current.us_aqi)
+            : pm25ToUsAqi(currentPm25);
+        usAqi = currentUsAqi;
       }
 
-      // Aggregate hourly into daily timeline
+      // Compute 24-hour trailing mean PM2.5 + aggregate daily timeline in local timezone
       if (data.hourly?.time && data.hourly?.pm2_5) {
         const times: string[] = data.hourly.time;
         const pms: (number | null)[] = data.hourly.pm2_5;
-        const byDate = new Map<string, number[]>();
 
+        const trailing24Mean = computeTrailing24hMeanPm25(times, pms, currentHourIso);
+        if (trailing24Mean !== null) {
+          pm25 = trailing24Mean;
+          usAqi = pm25ToUsAqi(trailing24Mean);
+        }
+
+        const byDate = new Map<string, number[]>();
         times.forEach((t, idx) => {
           const datePart = t.slice(0, 10);
           const val = pms[idx];
@@ -325,7 +445,6 @@ export async function fetchAirQualityForCoords(params: {
           }
         });
 
-        const todayIso = new Date().toISOString().slice(0, 10);
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const computedTimeline: DailyExposurePoint[] = [];
 
@@ -336,11 +455,11 @@ export async function fetchAirQualityForCoords(params: {
             if (vals.length === 0) return;
             const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
             const pmAvg = Number(avg.toFixed(1));
-            const dt = new Date(dateStr + 'T12:00:00');
+            const dt = new Date(dateStr + 'T12:00:00Z');
             const isToday = dateStr === todayIso;
             computedTimeline.push({
               date: dateStr,
-              label: isToday ? 'Today' : dayNames[dt.getDay()],
+              label: isToday ? 'Today' : dayNames[dt.getUTCDay()],
               pm25Avg: pmAvg,
               usAqiAvg: pm25ToUsAqi(pmAvg),
               cigsPerDay: Number((pmAvg / 22).toFixed(2)),
@@ -357,7 +476,7 @@ export async function fetchAirQualityForCoords(params: {
     // Keep fallback timeline if offline
   }
 
-  // Optional Hybrid WAQI Ground Station check if token provided (or 'demo' when supported)
+  // Optional Hybrid WAQI Ground Station check if token provided
   const tokenToUse = waqiToken?.trim();
   if (tokenToUse) {
     try {
@@ -373,11 +492,15 @@ export async function fetchAirQualityForCoords(params: {
           if (typeof iaqiPm25SubIndex === 'number') {
             usAqi = Math.round(iaqiPm25SubIndex);
             pm25 = usAqiToPm25(usAqi);
+            currentUsAqi = usAqi;
+            currentPm25 = pm25;
             source = 'Hybrid (WAQI Ground Station + Open-Meteo CAMS)';
             stationName = wJson.data.city?.name;
           } else if (typeof stationAqi === 'number') {
             usAqi = Math.round(stationAqi);
             pm25 = usAqiToPm25(usAqi);
+            currentUsAqi = usAqi;
+            currentPm25 = pm25;
             source = 'Hybrid (WAQI Ground Station + Open-Meteo CAMS)';
             stationName = wJson.data.city?.name;
           }
@@ -388,6 +511,7 @@ export async function fetchAirQualityForCoords(params: {
     }
   }
 
+  const nowMs = Date.now();
   return {
     id: `${city.toLowerCase().replace(/\s+/g, '-')}-${latitude.toFixed(2)}`,
     city,
@@ -397,30 +521,73 @@ export async function fetchAirQualityForCoords(params: {
     latitude,
     longitude,
     pm25,
+    currentPm25,
+    currentUsAqi,
     pm10,
     no2,
     o3,
     usAqi,
     source,
     stationName,
-    updatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    updatedAt: new Date(nowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    fetchedAtMs: nowMs,
     dailyTimeline,
   };
 }
 
 /**
+ * Resolves a city by name (for ?city= deep links) and fetches its live air quality.
+ */
+export async function fetchAirQualityByCityName(
+  cityNameQuery: string,
+  waqiToken?: string
+): Promise<CityAirQualityData | null> {
+  const q = cityNameQuery.trim();
+  if (!q) return null;
+
+  // Check if it matches one of our benchmark cities first for instant coordinates
+  const matchedBenchmark = GLOBAL_BENCHMARK_CITIES.find(
+    (b) => b.city.toLowerCase() === q.toLowerCase() || b.id.toLowerCase() === q.toLowerCase()
+  );
+  if (matchedBenchmark) {
+    return fetchAirQualityForCoords({
+      city: matchedBenchmark.city,
+      region: matchedBenchmark.region,
+      country: matchedBenchmark.country,
+      countryCode: matchedBenchmark.countryCode,
+      latitude: matchedBenchmark.latitude,
+      longitude: matchedBenchmark.longitude,
+      fallbackPm25: matchedBenchmark.fallbackPm25,
+      waqiToken,
+    });
+  }
+
+  const results = await searchCitiesWorldwide(q);
+  if (!results.length) return null;
+  const top = results[0];
+  return fetchAirQualityForCoords({
+    city: top.name,
+    region: top.admin1 || '',
+    country: top.country || '',
+    countryCode: top.country_code || '',
+    latitude: top.latitude,
+    longitude: top.longitude,
+    waqiToken,
+  });
+}
+
+/**
  * Detects user's current coordinates and city name via Browser Geolocation -> Reverse Geocode,
- * or falls back automatically to IP geolocation so the user always sees their real location immediately.
+ * or falls back automatically to IP geolocation.
  */
 export async function detectUserLocation(waqiToken?: string): Promise<CityAirQualityData> {
-  // 1. Try browser geolocation with a 4.5s timeout
   const getBrowserCoords = (): Promise<{ latitude: number; longitude: number } | null> =>
     new Promise((resolve) => {
       if (!('geolocation' in navigator)) {
         resolve(null);
         return;
       }
-      const timer = setTimeout(() => resolve(null), 4500);
+      const timer = setTimeout(() => resolve(null), 4000);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           clearTimeout(timer);
@@ -433,7 +600,7 @@ export async function detectUserLocation(waqiToken?: string): Promise<CityAirQua
           clearTimeout(timer);
           resolve(null);
         },
-        { enableHighAccuracy: false, timeout: 4000, maximumAge: 300000 }
+        { enableHighAccuracy: false, timeout: 3500, maximumAge: 300000 }
       );
     });
 
@@ -469,7 +636,7 @@ export async function detectUserLocation(waqiToken?: string): Promise<CityAirQua
     });
   }
 
-  // 2. Fallback to IP Geolocation (geojs.io or ipapi.co)
+  // 2. Fallback to IP Geolocation (geojs.io)
   try {
     const ipRes = await fetch('https://get.geojs.io/v1/ip/geo.json');
     if (ipRes.ok) {
@@ -492,7 +659,7 @@ export async function detectUserLocation(waqiToken?: string): Promise<CityAirQua
     // ignore IP geo failure
   }
 
-  // 3. Final fallback: New Delhi or New York
+  // 3. Final fallback if both GPS and IP are blocked
   const fallbackSeed = GLOBAL_BENCHMARK_CITIES[0];
   return fetchAirQualityForCoords({
     city: fallbackSeed.city,
@@ -507,7 +674,7 @@ export async function detectUserLocation(waqiToken?: string): Promise<CityAirQua
 }
 
 /**
- * Fetches live PM2.5 and US AQI for all 12 benchmark cities in a single batched Open-Meteo request!
+ * Fetches 24-hour mean PM2.5 and US AQI for all 12 benchmark cities in a single batched Open-Meteo request.
  */
 export async function fetchGlobalBenchmarksLive(): Promise<
   Array<BenchmarkCitySeed & { livePm25: number; liveUsAqi: number }>
@@ -515,7 +682,7 @@ export async function fetchGlobalBenchmarksLive(): Promise<
   try {
     const lats = GLOBAL_BENCHMARK_CITIES.map((c) => c.latitude.toFixed(4)).join(',');
     const lons = GLOBAL_BENCHMARK_CITIES.map((c) => c.longitude.toFixed(4)).join(',');
-    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lons}&current=pm2_5,us_aqi`;
+    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lons}&current=pm2_5,us_aqi&hourly=pm2_5&past_days=1&forecast_days=1&timezone=auto`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Batch fetch failed');
     const json = await res.json();
@@ -523,14 +690,25 @@ export async function fetchGlobalBenchmarksLive(): Promise<
 
     return GLOBAL_BENCHMARK_CITIES.map((seed, idx) => {
       const item = list[idx];
-      const livePm25 =
-        typeof item?.current?.pm2_5 === 'number'
-          ? Number(item.current.pm2_5.toFixed(1))
-          : seed.fallbackPm25;
-      const liveUsAqi =
-        typeof item?.current?.us_aqi === 'number'
-          ? Math.round(item.current.us_aqi)
-          : pm25ToUsAqi(livePm25);
+      const utcOffset =
+        typeof item?.utc_offset_seconds === 'number' ? item.utc_offset_seconds : undefined;
+      const { currentHourIso } = getLocalIsoDateAndHour(utcOffset);
+
+      let livePm25 = seed.fallbackPm25;
+      if (item?.hourly?.time && item?.hourly?.pm2_5) {
+        const mean24 = computeTrailing24hMeanPm25(
+          item.hourly.time,
+          item.hourly.pm2_5,
+          currentHourIso
+        );
+        if (mean24 !== null) {
+          livePm25 = mean24;
+        }
+      } else if (typeof item?.current?.pm2_5 === 'number') {
+        livePm25 = Number(item.current.pm2_5.toFixed(1));
+      }
+
+      const liveUsAqi = pm25ToUsAqi(livePm25);
       return {
         ...seed,
         livePm25,

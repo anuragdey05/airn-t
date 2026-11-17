@@ -361,7 +361,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
                 </text>
                 <circle cx="14" cy="31" r="4" fill="#F43F5E" />
                 <text x="24" y="35" className="fill-rose-300 text-xs font-mono-code">
-                  Marginal Smoking Propensity P(Smoke) [{economics.smokingPropensityPct}%]
+                  Illustrative Temptation Index [{economics.smokingPropensityPct}%]
                 </text>
               </g>
             </>
@@ -373,43 +373,47 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
       <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
         <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80">
           <div className="font-mono-code text-amber-400 uppercase text-xs mb-1">
-            1. Concave Dose-Response
+            1. Curve Fitted to Pope (2009)
           </div>
           <p className="text-stone-300 leading-relaxed">
-            Pope et al. (2009) show cardiovascular risk scales as{' '}
-            <code className="text-amber-200 font-mono-code">RR(C) = 1 + α·C^0.42</code>. Because the
-            second derivative <code className="text-amber-200 font-mono-code">d²RR/dC² &lt; 0</code>,
-            every passive smog cigarette flattens the slope for the next real cigarette.
+            Fitted to Pope et al. (2009, Fig. 2):{' '}
+            <code className="text-amber-200 font-mono-code">RR(C) = 1 + 0.26·((C+0.15)^0.42 − 0.15^0.42)</code>.
+            Because <code className="text-amber-200 font-mono-code">d²RR/dC² &lt; 0</code>,
+            baseline pollution flattens the incremental slope for the next cigarette.
           </p>
         </div>
 
         <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80">
           <div className="font-mono-code text-emerald-400 uppercase text-xs mb-1 flex items-center gap-1">
             <TrendingDown className="w-3.5 h-3.5" />
-            <span>2. Marginal Damage Discount</span>
+            <span>2. Slope Flattening Discount</span>
           </div>
           <p className="text-stone-300 leading-relaxed">
             In pristine air, 1 cigarette raises relative risk by{' '}
             <strong className="text-stone-100">+{(economics.marginalHealthCostPristine * 100).toFixed(2)}%</strong>. In{' '}
             <strong className="text-amber-300">{cityName}</strong>, that same cigarette adds{' '}
             <strong className="text-stone-100">+{(economics.marginalHealthCostCurrent * 100).toFixed(2)}%</strong> — a{' '}
-            <strong className="text-emerald-300">{economics.marginalDamageDiscountPct.toFixed(0)}% marginal discount</strong>.
+            <strong className="text-emerald-300">{economics.marginalDamageDiscountPct.toFixed(0)}% flatter slope</strong>.
           </p>
         </div>
 
         <div className="p-3 rounded-xl bg-stone-950/80 border border-stone-800/80">
           <div className="font-mono-code text-rose-400 uppercase text-xs mb-1 flex items-center gap-1">
             <BookOpen className="w-3.5 h-3.5" />
-            <span>3. Weber-Fechner & Competing Risk</span>
+            <span>3. Illustrative Temptation Index</span>
           </div>
           <p className="text-stone-300 leading-relaxed">
-            By Kahneman &amp; Tversky’s reference-dependence, 1 active cigarette represents a{' '}
+            A real cigarette is a{' '}
             <strong className="text-rose-300">
               +{economics.weberRelativeIncreasePct > 999 ? '>999' : economics.weberRelativeIncreasePct.toFixed(1)}%
             </strong>{' '}
-            shift over your ambient reference point ({economics.perceptualMaskingScore}% perceptual masking).
+            jump over today’s 24h ambient dose. Our 1–99% Temptation Index is an illustrative behavioral composite, not a clinical metric.
           </p>
         </div>
+      </div>
+
+      <div className="mt-3 px-3.5 py-2.5 rounded-xl bg-stone-950/60 border border-stone-800/70 text-xs text-stone-400 font-mono-code">
+        <strong className="text-stone-200">Methodology Note:</strong> The 22 µg/m³ = 1 cig/day rule is from Berkeley Earth (2015) using 24-hour mean PM2.5. The dose-response curve is fitted to Pope et al. (2009) Table 1 anchors, while the Temptation Index is a satirical behavioral-economics score. Smoking harms health at any AQI.
       </div>
     </div>
   );

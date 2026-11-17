@@ -1,7 +1,7 @@
 export type ActivityLevel = 'resting' | 'light_walk' | 'commute_active' | 'heavy_cardio';
 
 export interface ExposureParams {
-  pm25: number; // µg/m³ ambient outdoor PM2.5
+  pm25: number; // µg/m³ 24-hour average ambient outdoor PM2.5
   hoursOutdoors: number; // 0 to 24
   activityLevel: ActivityLevel;
   indoorPurifier: boolean; // reduces indoor infiltration from 0.55 to 0.15
@@ -65,7 +65,6 @@ export function pm25ToUsAqi(pm25: number): number {
       return Math.round(aqi);
     }
   }
-  // Above 500.4 µg/m³ extrapolate linearly
   return Math.round(500 + (clamped - 500.4) * 0.65);
 }
 
@@ -152,13 +151,12 @@ export function getAqiSeverity(aqi: number): AqiSeverity {
 }
 
 /**
- * Pope et al. (2009, Circulation) / (2011, EHP) Concave Dose-Response Model:
- * Relative Risk of cardiovascular/cardiopulmonary mortality as a concave function of daily cigarette-equivalent dose C:
+ * Concave Dose-Response Curve fitted to Pope et al. (2009, Circulation, Table 1 & Fig. 2):
  *   RR(C) = 1 + alpha * ((C + c0)^gamma - c0^gamma)
  * where gamma = 0.42 (< 1, strictly concave: dR/dC > 0, d²R/dC² < 0).
- * Calibrated so that:
+ * Anchored to Pope et al.'s published cardiovascular mortality relative risks:
  * - C = 0 => RR = 1.00
- * - C = 1 cig/day => RR ≈ 1.22 (consistent with Pope et al. steep initial slope at 1–3 cigs/day)
+ * - C = 1 cig/day => RR ≈ 1.22 (matches Pope et al. steep low-dose slope)
  * - C = 20 cigs/day (1 pack) => RR ≈ 1.78
  */
 const POPE_ALPHA = 0.26;
@@ -173,7 +171,7 @@ export function popeRelativeRisk(cigEquivalents: number): number {
 /**
  * Marginal Health Cost MC(C) = RR(C + 1) - RR(C)
  * Represents the incremental relative risk jump caused by lighting 1 actual cigarette
- * when your baseline passive cigarette intake from ambient pollution is C.
+ * when your baseline passive cigarette intake from 24-hour ambient pollution is C.
  */
 export function marginalHealthCostOfOneCig(baselineCigEquivalents: number): number {
   const c = Math.max(0, baselineCigEquivalents);
@@ -191,20 +189,20 @@ export interface EconomicBreakdown {
   cigsPerYear: number;
   packsPerYear: number; // 20 cigs per pack
 
-  // Pope et al. (2009) Dose-Response Metrics
+  // Curve fitted to Pope et al. (2009) Dose-Response Metrics
   currentRelativeRisk: number; // RR(C_env)
   riskAfterOneRealCig: number; // RR(C_env + 1)
   marginalHealthCostCurrent: number; // MC(C_env) = RR(C_env + 1) - RR(C_env)
   marginalHealthCostPristine: number; // MC(0) = RR(1) - RR(0)
-  marginalDamageDiscountPct: number; // (1 - MC(C_env)/MC(0)) * 100 — how much less marginal harm 1 cig does here vs clean air
+  marginalDamageDiscountPct: number; // (1 - MC(C_env)/MC(0)) * 100 — how much flatter the slope is here vs clean air
 
   // Kahneman-Tversky / Weber-Fechner Perceptual Salience Metrics
   weberRelativeIncreasePct: number; // (1 / max(C_env, 0.05)) * 100 — % increase in daily smoke intake
   perceptualMaskingScore: number; // 0 to 100: how "hidden" 1 extra cigarette is inside existing ambient smog
 
-  // Becker-Murphy (1988) Rational Addiction & McFadden Logit Smoking Propensity
+  // Illustrative Satirical Temptation / Propensity Index (inspired by Becker-Murphy 1988)
   netMarginalUtilityIndex: number; // -100 to +100
-  smokingPropensityPct: number; // 0 to 100% probability/propensity of lighting up given marginal utility vs reduced marginal cost
+  smokingPropensityPct: number; // 0 to 100% illustrative temptation score
   verdictTitle: string;
   verdictExplanation: string;
   economicPersona: string;
@@ -214,7 +212,7 @@ export function calculateCigaretteEconomics(params: ExposureParams): EconomicBre
   const ambientPm25 = Math.max(0, params.pm25);
   const usAqi = pm25ToUsAqi(ambientPm25);
 
-  // Berkeley Earth (Muller & Muller, 2015): 22 µg/m³ = 1.0 cigarette/day
+  // Berkeley Earth (Muller & Muller, 2015): 22 µg/m³ (24h average) = 1.0 cigarette/day
   const rawBerkeleyCigsPerDay = ambientPm25 / 22.0;
 
   // Exposure adjustment:
@@ -233,48 +231,37 @@ export function calculateCigaretteEconomics(params: ExposureParams): EconomicBre
   const cigsPerYear = effectiveCigsPerDay * 365;
   const packsPerYear = cigsPerYear / 20;
 
-  // 1. Pope et al. (2009) Concave Dose-Response & Marginal Health Cost
+  // 1. Concave Dose-Response Curve (fitted to Pope et al., 2009)
   const currentRelativeRisk = popeRelativeRisk(effectiveCigsPerDay);
   const riskAfterOneRealCig = popeRelativeRisk(effectiveCigsPerDay + 1);
   const marginalHealthCostCurrent = marginalHealthCostOfOneCig(effectiveCigsPerDay);
   const marginalHealthCostPristine = marginalHealthCostOfOneCig(0);
 
-  // Percentage reduction in marginal health cost compared to pristine 0 PM2.5 air
+  // Percentage reduction in slope (marginal risk jump) compared to pristine 0 PM2.5 air
   const marginalDamageDiscountPct = Math.max(
     0,
     Math.min(99, (1 - marginalHealthCostCurrent / marginalHealthCostPristine) * 100)
   );
 
   // 2. Weber-Fechner / Kahneman-Tversky Reference Point Salience
-  // How large is +1 cigarette relative to current baseline C_env?
   const referenceFloor = Math.max(effectiveCigsPerDay, 0.05);
   const weberRelativeIncreasePct = (1 / referenceFloor) * 100;
 
-  // Perceptual masking score (0 = totally noticeable in clean air, 100 = completely masked by heavy smog)
   const perceptualMaskingScore = Math.round(
     100 * (effectiveCigsPerDay / (effectiveCigsPerDay + 1.25))
   );
 
-  // 3. Becker-Murphy (1988) Rational Choice & McFadden Random Utility Logit
-  // Utility of smoking 1 real cigarette:
-  //   U_net = U_hedonic(craving) - lambda * (MC_health(C_env) / MC_health(0)) * Salience(C_env)
+  // 3. Illustrative Behavioral Index (combining craving slider, curve flattening & perceptual masking)
   const normalizedCraving = params.baselineCravingUtility / 100; // 0..1
-  const normalizedMarginalCost = marginalHealthCostCurrent / marginalHealthCostPristine; // 1.0 in clean air -> ~0.12 in severe smog
-  const salienceWeight = 1 / (1 + 0.45 * effectiveCigsPerDay); // Weber-Fechner diminishing sensitivity
+  const normalizedMarginalCost = marginalHealthCostCurrent / marginalHealthCostPristine;
+  const salienceWeight = 1 / (1 + 0.45 * effectiveCigsPerDay);
 
-  // Perceived effective deterrence from health damage (1.0 in clean air, drops toward 0 in heavy smog)
   const perceivedHealthDeterrence = 0.65 * normalizedMarginalCost + 0.35 * salienceWeight;
 
-  // Net Marginal Utility Index (-100 to +100)
   const rawNetUtility = (normalizedCraving * 1.15 - perceivedHealthDeterrence * 0.85) * 100;
   const netMarginalUtilityIndex = Math.max(-100, Math.min(100, Math.round(rawNetUtility)));
 
-  // Logistic choice probability P(Smoke | AQI, Craving)
-  // Calibrated so that at default craving (50/100):
-  // - C_env = 0.1 cigs (clean air) => ~14% propensity
-  // - C_env = 1.5 cigs (moderate) => ~42% propensity
-  // - C_env = 5.0 cigs (unhealthy) => ~74% propensity
-  // - C_env = 12+ cigs (severe) => ~91% propensity
+  // Illustrative logistic index (0–99%)
   const logitZ = 3.1 * (normalizedCraving - 0.68 * perceivedHealthDeterrence + 0.08);
   const smokingPropensityPct = Math.round(
     Math.max(1, Math.min(99, (1 / (1 + Math.exp(-logitZ))) * 100))
@@ -286,32 +273,32 @@ export function calculateCigaretteEconomics(params: ExposureParams): EconomicBre
 
   if (smokingPropensityPct < 25) {
     verdictTitle = 'Irrational Indulgence // Peak Marginal Guilt';
-    economicPersona = 'Risk-Averse Clean-Air Purist';
+    economicPersona = 'Clean-Air Purist';
     verdictExplanation =
-      'At this clean baseline, you sit on the steepest slope of Pope et al.’s concave dose-response curve. Lighting a real cigarette inflicts near-maximum marginal cardiovascular cost and spikes your daily particulate load dramatically.';
+      'At this clean 24-hour baseline, you sit on the steepest slope of Pope et al.’s concave dose-response curve. Lighting a real cigarette inflicts near-maximum marginal cardiovascular cost and spikes your daily particulate load.';
   } else if (smokingPropensityPct < 50) {
     verdictTitle = 'Sub-Threshold Justification // Moderate Deterrence';
-    economicPersona = 'Marginal Hedonic Hedger';
+    economicPersona = 'Marginal Hedger';
     verdictExplanation =
-      'Ambient particulates have begun absorbing your initial dose-response slope, discounting the marginal health cost of a cigarette by ' +
+      'Ambient particulates have begun flattening your dose-response slope, discounting the incremental risk jump of a cigarette by ' +
       marginalDamageDiscountPct.toFixed(0) +
-      '%. Still, the Weber-Fechner relative jump remains perceptible enough to restrain a rational agent.';
+      '%. Still, the relative jump remains large enough to deter a rational agent.';
   } else if (smokingPropensityPct < 75) {
     verdictTitle = 'Economically Tempting // Sunk-Lung Fallacy Active';
-    economicPersona = 'Becker-Murphy Opportunist';
+    economicPersona = 'Sunk-Lung Opportunist';
     verdictExplanation =
-      'Your lungs are already processing ' +
+      'Your lungs have already processed ' +
       effectiveCigsPerDay.toFixed(1) +
-      ' passive cigarettes today — all the tar, zero nicotine utility. Because the marginal harm of cigarette #(N+1) is ' +
+      ' passive cigarettes over the last 24 hours — all the tar, zero nicotine utility. Because the incremental slope for cigarette #(N+1) is ' +
       marginalDamageDiscountPct.toFixed(0) +
-      '% lower than in clean air, behavioral friction drops sharply.';
+      '% flatter than in clean air, perceived deterrence drops sharply.';
   } else {
-    verdictTitle = 'Near-Zero Marginal Disutility // Smog Singularity';
-    economicPersona = 'Competing-Risk Fatalist';
+    verdictTitle = 'Near-Zero Marginal Disutility // Smog Plateau';
+    economicPersona = 'Smog Fatalist';
     verdictExplanation =
-      'Under Pope et al.’s log-linear saturation and Dow-Philipson competing mortality risk theory, ambient smog has already pushed you onto the flat plateau of the dose-response curve. One real cigarette adds just +' +
+      'Ambient smog has already pushed you onto the flatter plateau of the Pope et al. (2009) exposure-response curve. One real cigarette adds just +' +
       weberRelativeIncreasePct.toFixed(1) +
-      '% to today’s particulate burden.';
+      '% to your 24-hour particulate burden.';
   }
 
   return {
@@ -357,9 +344,9 @@ export const ACADEMIC_CITATIONS: AcademicCitation[] = [
     authors: 'Richard A. Muller & Elizabeth A. Muller',
     year: 2015,
     journal: 'Berkeley Earth Science Paper',
-    formulaSummary: '1 Cigarette / day ≈ 22 µg/m³ of ambient PM2.5 (24h average exposure)',
+    formulaSummary: '1 Cigarette / day ≈ 22 µg/m³ of 24-hour average PM2.5',
     applicationInApp:
-      'Establishes our primary conversion rate by equating the population-attributable mortality risk of ambient PM2.5 in China & US cohorts to active cigarette smoking.',
+      'Direct published rule: equates the mortality risk of breathing a 24-hour mean PM2.5 of 22 µg/m³ to smoking 1 cigarette per day. We feed this formula the trailing 24-hour mean PM2.5 at your location.',
     doiOrUrl: 'https://berkeleyearth.org/air-pollution-and-cigarette-equivalence/',
   },
   {
@@ -368,31 +355,31 @@ export const ACADEMIC_CITATIONS: AcademicCitation[] = [
     authors: 'C. Arden Pope III, Richard T. Burnett, et al.',
     year: 2009,
     journal: 'Circulation (Vol. 120, Issue 11, pp. 941–948)',
-    formulaSummary: 'RR(d) = 1 + α · d^γ with γ < 1 (Strictly Concave Exposure-Response)',
+    formulaSummary: 'Fitted curve: RR(C) = 1 + 0.26 · ((C + 0.15)^0.42 − 0.15^0.42)',
     applicationInApp:
-      'Proves that the dose-response curve between PM2.5 and cardiovascular mortality is steep at low doses and flattens at high doses — meaning the marginal health cost (ΔRisk/ΔCig) strictly decreases as baseline air pollution rises.',
+      'Pope et al. demonstrate that cardiovascular risk is strongly concave (RR ≈ 1.22 at 1–3 cigs/day, ~1.78 at 20 cigs/day). Our power-law curve is fitted to those published anchors to compute how much flatter the slope ΔRR/ΔCig is at your city’s baseline.',
     doiOrUrl: 'https://doi.org/10.1161/CIRCULATIONAHA.109.857888',
   },
   {
     id: 'kahneman-tversky-1979',
-    shortTitle: 'Prospect Theory: An Analysis of Decision under Risk & Weber-Fechner Diminishing Sensitivity',
+    shortTitle: 'Prospect Theory: An Analysis of Decision under Risk & Weber-Fechner Law',
     authors: 'Daniel Kahneman & Amos Tversky',
     year: 1979,
     journal: 'Econometrica (Vol. 47, No. 2, pp. 263–291)',
-    formulaSummary: 'v(x; r) exhibits diminishing sensitivity ∂²|v|/∂x² < 0 relative to reference point r = C_env',
+    formulaSummary: 'Relative Jump = ΔC / C_env = +1 / C_env (Reference-Dependent Salience)',
     applicationInApp:
-      'Explains why inhaling 1 extra cigarette when your reference point is already 8 passive cigarettes feels psychologically negligible (Weber fraction ΔC / C_env = 12.5%) compared to pristine air.',
+      'Measures how noticeable +1 active cigarette is relative to your existing 24-hour ambient intake C_env (e.g., +12.5% when breathing 8 passive cigarettes vs. +500% in clean alpine air).',
     doiOrUrl: 'https://doi.org/10.2307/1914185',
   },
   {
     id: 'becker-murphy-1988',
-    shortTitle: 'A Theory of Rational Addiction & Competing Mortality Risks',
+    shortTitle: 'A Theory of Rational Addiction & Competing Mortality Risks (Illustrative Index)',
     authors: 'Gary S. Becker & Kevin M. Murphy (1988); W. H. Dow, T. J. Philipson & X. Sala-i-Martin (1999)',
     year: 1988,
     journal: 'Journal of Political Economy (Vol. 96, No. 4 / Vol. 107, No. 6)',
-    formulaSummary: 'Smoke iff U_nicotine > δ · MC_health(C_env) · S(C_env) + P_cig',
+    formulaSummary: 'Illustrative Index: P = 1 / (1 + exp(−3.1 · (Craving − 0.68 · Deterrence + 0.08)))',
     applicationInApp:
-      'Models how an exogenous increase in environmental health risk lowers the shadow price of risky consumption and reduces the marginal return to self-protection (abstinence).',
+      'Inspired by rational-addiction and competing-risk theory, we combine your craving slider with the Pope slope discount and Weber relative jump into an illustrative 1–99% satirical temptation index (not a clinical or empirical parameter from the paper).',
     doiOrUrl: 'https://doi.org/10.1086/261558',
   },
 ];
