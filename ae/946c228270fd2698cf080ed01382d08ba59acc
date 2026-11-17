@@ -1,0 +1,24 @@
+index.html
+  h_419a80373e9856 5-112,115,119-146
+public/llms.txt
+  h_419a80373e9856 1-33
+public/logo.svg
+  h_419a80373e9856 1-10
+public/manifest.webmanifest
+  h_419a80373e9856 1-14
+public/robots.txt
+  h_419a80373e9856 1-20
+public/sitemap.xml
+  h_419a80373e9856 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ae946c228270fd2698cf080ed01382d08ba59acc",
+  "prompts": {},
+  "humans": {
+    "h_419a80373e9856": {
+      "author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
