@@ -1,0 +1,18 @@
+src/App.tsx
+  h_419a80373e9856 857
+src/components/TimelineAndFinancials.tsx
+  h_419a80373e9856 13,23,213-214,221-223
+src/components/WarningReceiptModal.tsx
+  h_419a80373e9856 278,284-286
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3ee9b72c4557d98e764a5d7e2645d3e1495ea04b",
+  "prompts": {},
+  "humans": {
+    "h_419a80373e9856": {
+      "author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
