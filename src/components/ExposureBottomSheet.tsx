@@ -78,7 +78,7 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
           </div>
           <div className="text-right">
             <span className="text-xs text-stone-400 block uppercase">
-              Smoke Propensity
+              Temptation Index
             </span>
             <span className="text-lg font-bold text-rose-400">
               {economics.smokingPropensityPct}%
@@ -189,14 +189,14 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
           </div>
 
           {/* 4. Indoor HEPA Air Purifier */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-stone-950 border border-stone-800">
-            <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-stone-950 border border-stone-800">
+            <div className="flex items-center gap-2.5 min-w-0">
               <ShieldCheck
-                className={`w-4 h-4 ${
+                className={`w-4 h-4 shrink-0 ${
                   indoorPurifier ? 'text-emerald-400' : 'text-stone-400'
                 }`}
               />
-              <div>
+              <div className="min-w-0">
                 <div className="text-xs font-medium text-stone-200">
                   Indoor Air Purifier (HEPA)
                 </div>
@@ -207,9 +207,11 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
             </div>
             <button
               type="button"
-              role="switch" aria-checked={indoorPurifier} aria-label="Indoor HEPA air purifier"
+              role="switch"
+              aria-checked={indoorPurifier}
+              aria-label="Indoor HEPA air purifier"
               onClick={onTogglePurifier}
-              className={`px-3 py-1 rounded-lg text-xs font-mono-code font-semibold border transition-colors cursor-pointer ${
+              className={`px-3 py-1 rounded-lg text-xs font-mono-code font-semibold border transition-colors cursor-pointer shrink-0 ${
                 indoorPurifier
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                   : 'bg-stone-900 text-stone-400 border-stone-700'

@@ -42,21 +42,33 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
   const [statusMessage, setStatusMessage] = useState('');
   const [cardFormat, setCardFormat] = useState<ShareCardFormat>('story');
   const [viewMode, setViewMode] = useState<'card' | 'receipt'>('card');
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
   useEffect(() => {
-    if (!isOpen || viewMode !== 'card' || !canvasRef.current) return;
-    drawShareCardToCanvas(canvasRef.current, {
-      cityData,
-      economics,
-      hoursOutdoors,
-      packPriceUsd,
-      format: cardFormat,
-    });
-  }, [isOpen, viewMode, cardFormat, cityData, economics, hoursOutdoors, packPriceUsd]);
+    if (!isOpen || viewMode !== 'card' || !canvasEl) return;
+    const draw = () => {
+      drawShareCardToCanvas(canvasEl, {
+        cityData,
+        economics,
+        hoursOutdoors,
+        packPriceUsd,
+        format: cardFormat,
+      });
+    };
+    draw();
+    let cancelled = false;
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (!cancelled) draw();
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, viewMode, cardFormat, canvasEl, cityData, economics, hoursOutdoors, packPriceUsd]);
 
   const shareUrl = buildCityShareUrl(cityData.city);
 
@@ -110,25 +122,25 @@ Check your city: ${shareUrl}`;
 
   return (
     <Dialog open={isOpen} onClose={onClose} label="Atmospheric receipt">
-      <div className="receipt relative w-full max-w-md rounded-2xl bg-[#F4EFE6] text-stone-950 p-5 sm:p-6 pt-14 shadow-2xl border-4 border-stone-900 font-mono-code">
-        {/* Top Mode Switcher + Close button */}
-        <div className="absolute top-3 left-4 right-3 flex items-center justify-between">
-          <div className="inline-flex rounded-lg bg-stone-900/10 p-0.5 border border-stone-900/20 text-xs">
+      <div className="receipt relative w-full max-w-md rounded-2xl bg-[#F4EFE6] text-stone-950 p-4 sm:p-6 shadow-2xl border-4 border-stone-900 font-mono-code">
+        {/* Normal-flow Top Mode Switcher + Close button (no overlap) */}
+        <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-stone-900/15">
+          <div className="inline-flex rounded-xl bg-stone-900/10 p-1 border border-stone-900/20 text-xs">
             <button
               type="button"
               onClick={() => setViewMode('card')}
-              className={`px-2.5 py-1 rounded-md font-bold transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-colors cursor-pointer !min-h-[34px] ${
                 viewMode === 'card'
                   ? 'bg-stone-950 text-amber-300'
                   : 'text-stone-700 hover:text-stone-950'
               }`}
             >
-              Share Image Card
+              Share Card
             </button>
             <button
               type="button"
               onClick={() => setViewMode('receipt')}
-              className={`px-2.5 py-1 rounded-md font-bold transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-colors cursor-pointer !min-h-[34px] ${
                 viewMode === 'receipt'
                   ? 'bg-stone-950 text-amber-300'
                   : 'text-stone-700 hover:text-stone-950'
@@ -142,7 +154,7 @@ Check your city: ${shareUrl}`;
             type="button"
             aria-label="Close receipt"
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-stone-900/10 hover:bg-stone-900/20 text-stone-900 cursor-pointer"
+            className="p-2 rounded-xl bg-stone-900/10 hover:bg-stone-900/20 text-stone-900 cursor-pointer !min-h-[36px] !min-w-[36px] flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>
@@ -151,15 +163,15 @@ Check your city: ${shareUrl}`;
         {viewMode === 'card' ? (
           <div className="space-y-3">
             {/* Story (9:16) vs Post (16:9) Format Toggle */}
-            <div className="flex items-center justify-between text-xs pt-1">
+            <div className="flex items-center justify-between gap-2 text-xs">
               <span className="font-bold uppercase text-stone-700">
-                Card Format:
+                Format:
               </span>
               <div className="inline-flex gap-1.5">
                 <button
                   type="button"
                   onClick={() => setCardFormat('story')}
-                  className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1 whitespace-nowrap cursor-pointer !min-h-[34px] ${
                     cardFormat === 'story'
                       ? 'bg-stone-950 text-amber-300 border-stone-950 font-bold'
                       : 'bg-white/60 text-stone-800 border-stone-400'
@@ -171,7 +183,7 @@ Check your city: ${shareUrl}`;
                 <button
                   type="button"
                   onClick={() => setCardFormat('landscape')}
-                  className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1 whitespace-nowrap cursor-pointer !min-h-[34px] ${
                     cardFormat === 'landscape'
                       ? 'bg-stone-950 text-amber-300 border-stone-950 font-bold'
                       : 'bg-white/60 text-stone-800 border-stone-400'
@@ -184,26 +196,26 @@ Check your city: ${shareUrl}`;
             </div>
 
             {/* Live Canvas Preview */}
-            <div className="rounded-xl overflow-hidden border-2 border-stone-900 bg-[#0B0A09] flex items-center justify-center max-h-[340px]">
+            <div className="rounded-xl overflow-hidden border-2 border-stone-900 bg-[#0B0A09] flex items-center justify-center max-h-[330px] p-1">
               <canvas
-                ref={canvasRef}
+                ref={setCanvasEl}
                 aria-label={`Share card preview: My air already smokes ${economics.effectiveCigsPerDay.toFixed(
                   1
                 )} cigarettes a day in ${cityData.city}`}
                 className={
                   cardFormat === 'story'
-                    ? 'h-[330px] w-auto object-contain'
-                    : 'w-full h-auto object-contain'
+                    ? 'h-[318px] w-auto object-contain rounded-lg'
+                    : 'w-full h-auto object-contain rounded-lg'
                 }
               />
             </div>
 
-            <div className="p-2.5 rounded-lg bg-stone-900/10 border border-stone-900/20 text-xs flex items-center justify-between gap-2">
-              <span className="truncate text-stone-700">{shareUrl}</span>
+            <div className="p-2 rounded-xl bg-stone-900/10 border border-stone-900/20 text-xs flex items-center justify-between gap-2">
+              <span className="truncate text-stone-700 pl-1">{shareUrl}</span>
               <button
                 type="button"
                 onClick={handleCopy}
-                className="px-2 py-1 rounded bg-stone-900 text-amber-300 font-bold shrink-0 cursor-pointer"
+                className="px-2.5 py-1 rounded-lg bg-stone-900 text-amber-300 font-bold shrink-0 cursor-pointer !min-h-[32px]"
               >
                 Copy Link
               </button>
@@ -212,7 +224,7 @@ Check your city: ${shareUrl}`;
         ) : (
           <div>
             {/* Surgeon General / Economist Black-Bordered Warning Box */}
-            <div className="border-2 border-stone-950 p-3 mb-4 bg-amber-400/20">
+            <div className="border-2 border-stone-950 p-3 mb-3.5 bg-amber-400/20">
               <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider border-b border-stone-950 pb-1.5 mb-1.5">
                 <AlertTriangle className="w-4 h-4 text-stone-950 shrink-0" />
                 <span>ATMOSPHERIC EXPOSURE WARNING</span>
@@ -227,7 +239,7 @@ Check your city: ${shareUrl}`;
             </div>
 
             {/* Receipt Header */}
-            <div className="text-center border-b border-dashed border-stone-400 pb-3 mb-3">
+            <div className="text-center border-b border-dashed border-stone-400 pb-2.5 mb-2.5">
               <div className="text-sm font-bold tracking-widest uppercase">
                 airn&apos;t // TAR TAX RECEIPT
               </div>
@@ -241,28 +253,28 @@ Check your city: ${shareUrl}`;
             </div>
 
             {/* Itemized Line Items */}
-            <div className="space-y-2 text-xs border-b border-dashed border-stone-400 pb-3 mb-3">
-              <div className="flex justify-between">
+            <div className="space-y-1.5 text-xs border-b border-dashed border-stone-400 pb-2.5 mb-2.5">
+              <div className="receipt-line">
                 <span>24-HOUR MEAN PM2.5</span>
                 <span className="font-bold">{cityData.pm25.toFixed(1)} µg/m³</span>
               </div>
-              <div className="flex justify-between">
+              <div className="receipt-line">
                 <span>US EPA AIR QUALITY INDEX</span>
                 <span className="font-bold">AQI {economics.usAqi}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="receipt-line">
                 <span>EXPOSURE PROFILE ({hoursOutdoors}H OUTDOOR)</span>
                 <span className="font-bold">{economics.effectivePm25.toFixed(1)} µg/m³ EFF</span>
               </div>
-              <div className="flex justify-between text-sm font-bold pt-1 border-t border-stone-300">
+              <div className="receipt-line text-sm font-bold pt-1 border-t border-stone-300">
                 <span>PASSIVE CIGARETTES / DAY</span>
                 <span>{economics.effectiveCigsPerDay.toFixed(2)} CIGS</span>
               </div>
-              <div className="flex justify-between">
+              <div className="receipt-line">
                 <span>ANNUALIZED PACK HABIT</span>
                 <span className="font-bold">{economics.packsPerYear.toFixed(1)} PACKS/YR</span>
               </div>
-              <div className="flex justify-between">
+              <div className="receipt-line">
                 <span>UNPAID TAR STREET VALUE</span>
                 <span className="font-bold">
                   ${(economics.packsPerYear * packPriceUsd).toFixed(0)} / YR
@@ -271,21 +283,21 @@ Check your city: ${shareUrl}`;
             </div>
 
             {/* Marginal Utility Audit */}
-            <div className="space-y-1.5 text-xs border-b border-dashed border-stone-400 pb-3 mb-3">
+            <div className="space-y-1.5 text-xs border-b border-dashed border-stone-400 pb-2.5 mb-2.5">
               <div className="font-bold uppercase text-xs text-stone-700">
                 BEHAVIORAL ECONOMICS AUDIT (+1 REAL CIG)
               </div>
-              <div className="flex justify-between">
+              <div className="receipt-line">
                 <span>POPE (2009 FIT) SLOPE DISCOUNT</span>
                 <span className="font-bold">-{economics.marginalDamageDiscountPct.toFixed(0)}%</span>
               </div>
-              <div className="flex justify-between">
+              <div className="receipt-line">
                 <span>RELATIVE LOAD JUMP</span>
                 <span className="font-bold">
                   +{economics.weberRelativeIncreasePct > 999 ? '>999' : economics.weberRelativeIncreasePct.toFixed(1)}%
                 </span>
               </div>
-              <div className="flex justify-between text-sm font-bold pt-1 text-rose-800">
+              <div className="receipt-line text-sm font-bold pt-1 text-rose-800">
                 <span>ILLUSTRATIVE TEMPTATION INDEX</span>
                 <span>{economics.smokingPropensityPct}%</span>
               </div>
@@ -293,7 +305,7 @@ Check your city: ${shareUrl}`;
           </div>
         )}
 
-        <p role="status" className="copy-status text-xs font-bold text-emerald-800 min-h-[18px] mb-2">
+        <p role="status" className="copy-status text-xs font-bold min-h-[18px] mb-2">
           {statusMessage || (copied ? 'Receipt copied.' : '')}
         </p>
 

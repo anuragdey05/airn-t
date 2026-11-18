@@ -23,7 +23,7 @@ import { AnimatedCigarettePack } from './components/AnimatedCigarettePack';
 import { ShouldYouSmokeCard } from './components/ShouldYouSmokeCard';
 import { ExposureBottomSheet } from './components/ExposureBottomSheet';
 import { WarningReceiptModal } from './components/WarningReceiptModal';
-import { triggerHaptic } from './lib/haptics';
+import { scrollToTop, triggerHaptic } from './lib/haptics';
 import {
   BookOpen,
   Calendar,
@@ -61,6 +61,13 @@ const AcademicCitationsSection = lazy(() =>
 
 type ActiveTab = 'pack' | 'compare' | 'trends' | 'science';
 
+const NAV_ITEMS: Array<{ id: ActiveTab; label: string; Icon: React.ComponentType<{ className?: string }> }> = [
+  { id: 'pack', label: 'Pack & Verdict', Icon: Flame },
+  { id: 'compare', label: 'Compare Cities', Icon: Swords },
+  { id: 'trends', label: 'Trends & Cost', Icon: Calendar },
+  { id: 'science', label: 'The Science', Icon: BookOpen },
+];
+
 function parseInitialTab(): ActiveTab {
   if (typeof window === 'undefined') return 'pack';
   const t = new URLSearchParams(window.location.search).get('tab');
@@ -68,6 +75,37 @@ function parseInitialTab(): ActiveTab {
     return t;
   }
   return 'pack';
+}
+
+function CitySearchDropdown({
+  results,
+  onSelect,
+  className,
+}: {
+  results: GeocodingResult[];
+  onSelect: (geo: GeocodingResult) => void;
+  className: string;
+}) {
+  if (results.length === 0) return null;
+  return (
+    <div className={className}>
+      {results.map((geo) => (
+        <button
+          key={geo.id}
+          type="button"
+          onClick={() => onSelect(geo)}
+          className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-stone-900 flex items-center justify-between border-b border-stone-900 last:border-0 cursor-pointer"
+        >
+          <div>
+            <span className="font-semibold text-stone-100">{geo.name}</span>
+            {geo.admin1 && <span className="text-stone-400">, {geo.admin1}</span>}
+            <span className="text-stone-400"> — {geo.country}</span>
+          </div>
+          <span className="font-mono-code text-xs text-amber-400">Load →</span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export function App() {
@@ -157,12 +195,17 @@ export function App() {
     }))
   );
 
-  // Apply resolved city and auto-adjust local pack price
   const applyPrimaryCity = (fresh: CityAirQualityData) => {
     setCityData(fresh);
     setManualPm25Override(null);
     setPackPriceUsd(getPackPriceForCountry(fresh.countryCode));
     setIsInitialResolving(false);
+  };
+
+  const switchTab = (tab: ActiveTab) => {
+    triggerHaptic(8);
+    setActiveTab(tab);
+    scrollToTop();
   };
 
   // On mount: check ?city= deep link first; otherwise detect user's real location
@@ -347,12 +390,7 @@ export function App() {
       applyPrimaryCity(fresh);
       setPackPriceUsd(seed.localPackPriceUsd);
       setActiveTab('pack');
-      window.scrollTo({
-        top: 0,
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? 'auto'
-          : 'smooth',
-      });
+      scrollToTop();
     } catch {
       if (request === primaryRequest.current)
         setLocationError('Could not load this location. Please try again.');
@@ -379,12 +417,7 @@ export function App() {
       });
       if (request !== challengerRequest.current) return;
       setChallengerCity(fresh);
-      window.scrollTo({
-        top: 0,
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-          ? 'auto'
-          : 'smooth',
-      });
+      scrollToTop();
     } catch {
       if (request === challengerRequest.current)
         setLocationError('Could not load the comparison city. Please try again.');
@@ -419,7 +452,7 @@ export function App() {
           {/* Brand Logo */}
           <button
             type="button"
-            onClick={() => setActiveTab('pack')}
+            onClick={() => switchTab('pack')}
             className="flex items-center gap-2 text-left cursor-pointer shrink-0"
           >
             <img
@@ -455,25 +488,11 @@ export function App() {
                   {header.message}
                 </p>
               )}
-              {headerResults.length > 0 && (
-                <div className="absolute left-0 right-0 mt-1.5 rounded-xl bg-stone-950 border border-stone-700 shadow-2xl overflow-hidden z-50 max-h-64 overflow-y-auto">
-                  {headerResults.map((geo) => (
-                    <button
-                      key={geo.id}
-                      type="button"
-                      onClick={() => handleSelectHeaderCity(geo)}
-                      className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-stone-900 flex items-center justify-between border-b border-stone-900 last:border-0 cursor-pointer"
-                    >
-                      <div>
-                        <span className="font-medium text-stone-100">{geo.name}</span>
-                        {geo.admin1 && <span className="text-stone-400">, {geo.admin1}</span>}
-                        <span className="text-stone-400"> — {geo.country}</span>
-                      </div>
-                      <span className="font-mono-code text-xs text-amber-400">Load →</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <CitySearchDropdown
+                results={headerResults}
+                onSelect={handleSelectHeaderCity}
+                className="absolute left-0 right-0 mt-1.5 rounded-xl bg-stone-950 border border-stone-700 shadow-2xl overflow-hidden z-50 max-h-64 overflow-y-auto"
+              />
             </div>
 
             {/* Mobile City Pill Trigger (Opens Search Bar Overlay) */}
@@ -614,25 +633,11 @@ export function App() {
                 {header.message}
               </p>
             )}
-            {headerResults.length > 0 && (
-              <div className="mt-1.5 rounded-xl bg-stone-900 border border-stone-800 divide-y divide-stone-800 max-h-56 overflow-y-auto">
-                {headerResults.map((geo) => (
-                  <button
-                    key={geo.id}
-                    type="button"
-                    onClick={() => handleSelectHeaderCity(geo)}
-                    className="w-full text-left px-3 py-2.5 text-xs flex items-center justify-between"
-                  >
-                    <div>
-                      <span className="font-semibold text-stone-100">{geo.name}</span>
-                      {geo.admin1 && <span className="text-stone-400">, {geo.admin1}</span>}
-                      <span className="text-stone-400"> — {geo.country}</span>
-                    </div>
-                    <span className="font-mono-code text-xs text-amber-400">Load →</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            <CitySearchDropdown
+              results={headerResults}
+              onSelect={handleSelectHeaderCity}
+              className="mt-1.5 rounded-xl bg-stone-900 border border-stone-800 divide-y divide-stone-800 max-h-56 overflow-y-auto"
+            />
           </div>
         )}
       </header>
@@ -749,15 +754,7 @@ export function App() {
                     setShowMarginalCigPreview(!showMarginalCigPreview)
                   }
                   onOpenShareModal={() => setIsReceiptOpen(true)}
-                  onOpenScienceTab={() => {
-                    setActiveTab('science');
-                    window.scrollTo({
-                      top: 0,
-                      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                        ? 'auto'
-                        : 'smooth',
-                    });
-                  }}
+                  onOpenScienceTab={() => switchTab('science')}
                 />
               </>
             )}
@@ -768,7 +765,7 @@ export function App() {
                 <span>Instant City Teleport (24h Cigs/Day):</span>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('compare')}
+                  onClick={() => switchTab('compare')}
                   className="text-amber-400 hover:underline cursor-pointer"
                 >
                   Compare All Cities →
@@ -877,105 +874,27 @@ export function App() {
         className="bottom-nav fixed bottom-0 inset-x-0 z-40 backdrop-blur-2xl bg-[#0B0A09]/92 border-t border-stone-800/90"
       >
         <div className="max-w-lg mx-auto px-2 py-1.5 grid grid-cols-4 gap-1">
-          <button
-            type="button"
-            aria-current={activeTab === 'pack' ? 'page' : undefined}
-            onClick={() => {
-              triggerHaptic(8);
-              setActiveTab('pack');
-              window.scrollTo({
-                top: 0,
-                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                  ? 'auto'
-                  : 'smooth',
-              });
-            }}
-            className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              activeTab === 'pack'
-                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35'
-                : 'text-stone-400 hover:text-stone-200'
-            }`}
-          >
-            <Flame className="w-4 h-4" />
-            <span className="text-xs font-mono-code font-semibold tracking-tight">
-              Pack &amp; Verdict
-            </span>
-          </button>
-
-          <button
-            type="button"
-            aria-current={activeTab === 'compare' ? 'page' : undefined}
-            onClick={() => {
-              triggerHaptic(8);
-              setActiveTab('compare');
-              window.scrollTo({
-                top: 0,
-                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                  ? 'auto'
-                  : 'smooth',
-              });
-            }}
-            className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              activeTab === 'compare'
-                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35'
-                : 'text-stone-400 hover:text-stone-200'
-            }`}
-          >
-            <Swords className="w-4 h-4" />
-            <span className="text-xs font-mono-code font-semibold tracking-tight">
-              Compare Cities
-            </span>
-          </button>
-
-          <button
-            type="button"
-            aria-current={activeTab === 'trends' ? 'page' : undefined}
-            onClick={() => {
-              triggerHaptic(8);
-              setActiveTab('trends');
-              window.scrollTo({
-                top: 0,
-                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                  ? 'auto'
-                  : 'smooth',
-              });
-            }}
-            className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              activeTab === 'trends'
-                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35'
-                : 'text-stone-400 hover:text-stone-200'
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            <span className="text-xs font-mono-code font-semibold tracking-tight">
-              Trends &amp; Cost
-            </span>
-          </button>
-
-          <button
-            type="button"
-            aria-current={activeTab === 'science' ? 'page' : undefined}
-            onClick={() => {
-              triggerHaptic(8);
-              setActiveTab('science');
-              window.scrollTo({
-                top: 0,
-                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                  ? 'auto'
-                  : 'smooth',
-              });
-            }}
-            className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              activeTab === 'science'
-                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35'
-                : 'text-stone-400 hover:text-stone-200'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span className="text-xs font-mono-code font-semibold tracking-tight">
-              The Science
-            </span>
-          </button>
+          {NAV_ITEMS.map(({ id, label, Icon }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-current={isActive ? 'page' : undefined}
+                onClick={() => switchTab(id)}
+                className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
+                  isActive
+                    ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="text-xs font-mono-code font-semibold tracking-tight">
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </nav>
 

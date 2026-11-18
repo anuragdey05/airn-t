@@ -1,6 +1,6 @@
 /* A folded paperboard object. Transforms belong to GSAP; textures remain CSS. */
-.physical-pack { padding: 0 18px 0 6px; isolation: isolate; }
-.physical-pack .carton-stage { position: relative; width: min(100%, 340px); height: auto; padding-top: 130px; margin: 0 auto; perspective: 1100px; }
+.physical-pack { padding: 0 24px 0 4px; isolation: isolate; }
+.physical-pack .carton-stage { position: relative; width: min(100%, 332px); height: auto; padding-top: 130px; margin: 0 auto; perspective: 1100px; }
 .carton-arrival { position: relative; }
 .carton-rig { position: relative; transform-style: preserve-3d; }
 .carton-ground { position: absolute; bottom: -15px; left: 5%; width: 100%; height: 34px; background: #000b; border-radius: 50%; filter: blur(12px); transform: skewX(-12deg); }

@@ -230,23 +230,23 @@ export function drawShareCardToCanvas(
     ctx.fill();
 
     ctx.fillStyle = '#0B0A09';
-    ctx.font = '700 22px "JetBrains Mono", monospace';
+    ctx.font = '700 20px "JetBrains Mono", monospace';
     ctx.fillText(
       'ATMOSPHERIC WARNING · BERKELEY EARTH (22 µg/m³ PM2.5 = 1 CIG/DAY)',
       trayX + 28,
       warnY + 48
     );
 
-    ctx.font = '500 25px "Space Grotesk", sans-serif';
+    ctx.font = '500 22px "Space Grotesk", sans-serif';
     ctx.fillText(
       `Breathing ${cityData.city}'s air equals ${(cigs * 7).toFixed(
         1
-      )} cigarettes/week (${economics.packsPerYear.toFixed(1)} packs/year)`,
+      )} cigarettes/week (${economics.packsPerYear.toFixed(1)} packs/year).`,
       trayX + 28,
       warnY + 96
     );
     ctx.fillStyle = '#44403C';
-    ctx.font = '500 22px "JetBrains Mono", monospace';
+    ctx.font = '500 20px "JetBrains Mono", monospace';
     ctx.fillText(
       `Check your city → airn-t.vercel.app/?city=${encodeURIComponent(cityData.city)}`,
       trayX + 28,

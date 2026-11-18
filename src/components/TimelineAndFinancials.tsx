@@ -60,55 +60,55 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
             </div>
           </div>
 
-          {/* Bar Chart */}
-          <div className="chart-scroll" tabIndex={0} role="region" aria-label="Daily cigarette timeline, scroll horizontally for all days">
-          <div className="timeline-grid grid grid-cols-10 gap-3 pt-4 pb-2 items-end h-64">
-            {dailyTimeline.slice(0, 10).map((pt) => {
-              const adjCigs = pt.cigsPerDay * exposureRatio;
-              const heightPct = Math.max(8, Math.min(100, (adjCigs / maxDailyCigs) * 100));
-              const isToday = pt.label === 'Today';
-              const sev = getAqiSeverity(pt.usAqiAvg);
+          {/* Bar Chart — fits all 10 days on mobile without horizontal clipping */}
+          <div role="region" aria-label="Daily cigarette timeline">
+            <div className="grid grid-cols-10 gap-1 sm:gap-2.5 pt-4 pb-2 items-end h-56 sm:h-64">
+              {dailyTimeline.slice(0, 10).map((pt) => {
+                const adjCigs = pt.cigsPerDay * exposureRatio;
+                const heightPct = Math.max(8, Math.min(100, (adjCigs / maxDailyCigs) * 100));
+                const isToday = pt.label === 'Today';
+                const sev = getAqiSeverity(pt.usAqiAvg);
 
-              return (
-                <div
-                  key={pt.date}
-                  className="flex flex-col items-center justify-end h-full group relative"
-                >
-                  <span className="text-xs font-mono-code text-stone-300 mb-1">
-                    {adjCigs.toFixed(1)}
-                  </span>
-                  <div className="w-full flex-1 flex items-end justify-center">
-                    <div
-                      className={`w-full max-w-[34px] rounded-t-lg transition-colors duration-300 ${
-                        isToday
-                          ? 'ring-2 ring-amber-400 shadow-lg shadow-amber-500/20'
-                          : ''
-                      } ${
-                        pt.isForecast
-                          ? 'bg-sky-500/35 border border-dashed border-sky-400/70'
-                          : ''
-                      }`}
-                      style={{
-                        height: `${heightPct}%`,
-                        backgroundColor: pt.isForecast ? undefined : sev.colorHex,
-                        opacity: pt.isForecast ? 0.85 : isToday ? 1 : 0.78,
-                      }}
-                    />
-                  </div>
-                  <span
-                    className={`mt-2 text-xs font-mono-code ${
-                      isToday ? 'text-amber-300 font-bold' : 'text-stone-400'
-                    }`}
+                return (
+                  <div
+                    key={pt.date}
+                    className="flex flex-col items-center justify-end h-full group relative min-w-0"
                   >
-                    {pt.label}
-                  </span>
-                  <span className="text-xs font-mono-code text-stone-400">
-                    AQI {pt.usAqiAvg}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                    <span className="text-[10px] sm:text-xs font-mono-code text-stone-300 mb-1">
+                      {adjCigs.toFixed(1)}
+                    </span>
+                    <div className="w-full flex-1 flex items-end justify-center">
+                      <div
+                        className={`w-full max-w-[30px] rounded-t-md sm:rounded-t-lg transition-colors duration-300 ${
+                          isToday
+                            ? 'ring-2 ring-amber-400 shadow-lg shadow-amber-500/20'
+                            : ''
+                        } ${
+                          pt.isForecast
+                            ? 'bg-sky-500/35 border border-dashed border-sky-400/70'
+                            : ''
+                        }`}
+                        style={{
+                          height: `${heightPct}%`,
+                          backgroundColor: pt.isForecast ? undefined : sev.colorHex,
+                          opacity: pt.isForecast ? 0.85 : isToday ? 1 : 0.78,
+                        }}
+                      />
+                    </div>
+                    <span
+                      className={`mt-1.5 text-[10px] sm:text-xs font-mono-code truncate max-w-full ${
+                        isToday ? 'text-amber-300 font-bold' : 'text-stone-300'
+                      }`}
+                    >
+                      {isToday ? 'Now' : pt.label}
+                    </span>
+                    <span className="text-[9px] sm:text-[11px] font-mono-code text-stone-400">
+                      {pt.usAqiAvg}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
           {!dailyTimeline.length && <p role="status" className="text-sm py-4 text-stone-300">No timeline is available for this location.</p>}
         </div>

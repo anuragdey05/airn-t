@@ -17,3 +17,9 @@ export function triggerHaptic(pattern: number | number[] = 12): void {
     // Ignore vibration errors on unsupported devices
   }
 }
+
+export function scrollToTop(): void {
+  if (typeof window === 'undefined') return;
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+}

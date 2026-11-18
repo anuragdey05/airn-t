@@ -127,12 +127,15 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
       </div>
 
       {/* Interactive SVG Graph */}
-      <p className="text-sm text-stone-300 mb-4">{cityName}: {economics.effectiveCigsPerDay.toFixed(2)} passive cigarettes/day; marginal harm discount {economics.marginalDamageDiscountPct.toFixed(0)}%; smoking propensity {economics.smokingPropensityPct}%. Scroll the chart horizontally on smaller screens.</p>
-      <div className="chart-scroll" tabIndex={0} role="region" aria-label="Economic model chart">
+      <p className="text-xs sm:text-sm text-stone-300 mb-3">
+        <strong>{cityName}:</strong> {economics.effectiveCigsPerDay.toFixed(2)} passive cigarettes/day · slope discount -{economics.marginalDamageDiscountPct.toFixed(0)}% · illustrative temptation index {economics.smokingPropensityPct}%.
+      </p>
+      <div className="w-full" role="region" aria-label="Economic model chart">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          role="img" aria-label={activeTab === 'pope_concave' ? 'Concave dose-response curve' : 'Marginal cost crossover curve'}
-          className="science-chart w-full h-auto select-none bg-stone-950/60 rounded-xl border border-stone-900"
+          role="img"
+          aria-label={activeTab === 'pope_concave' ? 'Concave dose-response curve' : 'Marginal cost crossover curve'}
+          className="w-full h-auto select-none bg-stone-950/60 rounded-xl border border-stone-900"
         >
           <defs>
             <linearGradient id="amberArea" x1="0" y1="0" x2="0" y2="1">
@@ -281,28 +284,28 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
               />
 
               <rect
-                x={Math.min(width - 215, Math.max(padLeft + 10, curX - 80))}
-                y={Math.max(padTop + 4, curY_RR - 44)}
-                width="195"
-                height="34"
+                x={Math.min(width - padRight - 258, Math.max(padLeft + 8, curX - 110))}
+                y={Math.max(padTop + 4, curY_RR - 46)}
+                width="254"
+                height="38"
                 rx="6"
-                fill="rgba(18, 16, 14, 0.92)"
+                fill="rgba(18, 16, 14, 0.94)"
                 stroke="rgba(245, 158, 11, 0.45)"
               />
               <text
-                x={Math.min(width - 207, Math.max(padLeft + 18, curX - 72))}
-                y={Math.max(padTop + 18, curY_RR - 30)}
-                className="fill-amber-300 text-xs font-mono-code font-semibold"
+                x={Math.min(width - padRight - 248, Math.max(padLeft + 18, curX - 100))}
+                y={Math.max(padTop + 19, curY_RR - 31)}
+                className="fill-amber-300 text-[11px] font-mono-code font-semibold"
               >
-                {cityName}: {economics.effectiveCigsPerDay.toFixed(2)} cigs/day
+                {cityName.slice(0, 18)}: {economics.effectiveCigsPerDay.toFixed(2)} cigs/day
               </text>
               <text
-                x={Math.min(width - 207, Math.max(padLeft + 18, curX - 72))}
-                y={Math.max(padTop + 31, curY_RR - 17)}
-                className="fill-rose-300 text-xs font-mono-code"
+                x={Math.min(width - padRight - 248, Math.max(padLeft + 18, curX - 100))}
+                y={Math.max(padTop + 34, curY_RR - 16)}
+                className="fill-rose-300 text-[11px] font-mono-code"
               >
                 +1 Cig ΔRisk: +{(economics.marginalHealthCostCurrent * 100).toFixed(2)}% (-
-                {economics.marginalDamageDiscountPct.toFixed(0)}% cost)
+                {economics.marginalDamageDiscountPct.toFixed(0)}% slope)
               </text>
             </>
           ) : (
@@ -345,22 +348,22 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
               />
 
               {/* Legend */}
-              <g transform={`translate(${padLeft + 14}, ${padTop + 10})`}>
+              <g transform={`translate(${padLeft + 10}, ${padTop + 8})`}>
                 <rect
                   x="0"
                   y="0"
-                  width="265"
-                  height="44"
+                  width="320"
+                  height="46"
                   rx="6"
-                  fill="rgba(12, 10, 9, 0.88)"
+                  fill="rgba(12, 10, 9, 0.9)"
                   stroke="rgba(255,255,255,0.08)"
                 />
-                <circle cx="14" cy="14" r="4" fill="#10B981" />
-                <text x="24" y="18" className="fill-emerald-300 text-xs font-mono-code">
+                <circle cx="14" cy="15" r="4" fill="#10B981" />
+                <text x="24" y="19" className="fill-emerald-300 text-[11px] font-mono-code">
                   Marginal Health Cost MC(C) [{curMcPct.toFixed(0)}% of clean air]
                 </text>
-                <circle cx="14" cy="31" r="4" fill="#F43F5E" />
-                <text x="24" y="35" className="fill-rose-300 text-xs font-mono-code">
+                <circle cx="14" cy="33" r="4" fill="#F43F5E" />
+                <text x="24" y="37" className="fill-rose-300 text-[11px] font-mono-code">
                   Illustrative Temptation Index [{economics.smokingPropensityPct}%]
                 </text>
               </g>

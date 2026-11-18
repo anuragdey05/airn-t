@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCitySearch } from '../src/hooks/useCitySearch';
 import { Dialog } from '../src/components/Dialog';
 import { AnimatedCigarettePack } from '../src/components/AnimatedCigarettePack';
-import { getAqiSeverity } from '../src/lib/economics';
+import { WarningReceiptModal } from '../src/components/WarningReceiptModal';
+import { calculateCigaretteEconomics, getAqiSeverity } from '../src/lib/economics';
 import {
   searchCitiesWorldwide,
   computeTrailing24hMeanPm25,
@@ -162,5 +163,83 @@ describe('24h mean PM2.5, local timezone & share helpers', () => {
     expect(getPackPriceForCountry('IN')).toBe(4.2);
     expect(getPackPriceForCountry('GB')).toBe(19.8);
     expect(buildCityShareUrl('New Delhi')).toContain('?city=New+Delhi');
+  });
+
+  it('draws the share card canvas immediately when WarningReceiptModal opens from closed state', () => {
+    vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
+    const mockCtx = {
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+      font: '',
+      globalAlpha: 1,
+      fillRect: vi.fn(),
+      strokeRect: vi.fn(),
+      fillText: vi.fn(),
+      measureText: vi.fn(() => ({ width: 120 })),
+      createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      beginPath: vi.fn(),
+      roundRect: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+    };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(mockCtx as unknown as CanvasRenderingContext2D);
+
+    const sampleCity = {
+      id: 'delhi-in',
+      city: 'New Delhi',
+      region: 'Delhi NCR',
+      country: 'India',
+      countryCode: 'IN',
+      latitude: 28.61,
+      longitude: 77.21,
+      pm25: 88.0,
+      pm10: 140.0,
+      no2: 24.0,
+      o3: 40.0,
+      usAqi: 168,
+      source: 'Open-Meteo CAMS Global' as const,
+      updatedAt: '12:00',
+      dailyTimeline: [],
+    };
+    const econ = calculateCigaretteEconomics({
+      pm25: 88.0,
+      hoursOutdoors: 8,
+      activityLevel: 'light_walk',
+      indoorPurifier: false,
+      baselineCravingUtility: 55,
+    });
+
+    const { rerender } = render(
+      <WarningReceiptModal
+        isOpen={false}
+        onClose={() => {}}
+        cityData={sampleCity}
+        economics={econ}
+        hoursOutdoors={8}
+        packPriceUsd={4.2}
+      />
+    );
+
+    rerender(
+      <WarningReceiptModal
+        isOpen={true}
+        onClose={() => {}}
+        cityData={sampleCity}
+        economics={econ}
+        hoursOutdoors={8}
+        packPriceUsd={4.2}
+      />
+    );
+
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+    expect(canvas).not.toBeNull();
+    expect(canvas.width).toBe(1080);
+    expect(canvas.height).toBe(1920);
+    expect(mockCtx.fillText).toHaveBeenCalledWith('My air already smokes', expect.any(Number), expect.any(Number));
   });
 });

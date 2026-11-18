@@ -489,15 +489,10 @@ export async function fetchAirQualityForCoords(params: {
         if (wJson.status === 'ok' && wJson.data) {
           const stationAqi = typeof wJson.data.aqi === 'number' ? wJson.data.aqi : undefined;
           const iaqiPm25SubIndex = wJson.data.iaqi?.pm25?.v;
-          if (typeof iaqiPm25SubIndex === 'number') {
-            usAqi = Math.round(iaqiPm25SubIndex);
-            pm25 = usAqiToPm25(usAqi);
-            currentUsAqi = usAqi;
-            currentPm25 = pm25;
-            source = 'Hybrid (WAQI Ground Station + Open-Meteo CAMS)';
-            stationName = wJson.data.city?.name;
-          } else if (typeof stationAqi === 'number') {
-            usAqi = Math.round(stationAqi);
+          const resolvedAqi =
+            typeof iaqiPm25SubIndex === 'number' ? iaqiPm25SubIndex : stationAqi;
+          if (typeof resolvedAqi === 'number') {
+            usAqi = Math.round(resolvedAqi);
             pm25 = usAqiToPm25(usAqi);
             currentUsAqi = usAqi;
             currentPm25 = pm25;
