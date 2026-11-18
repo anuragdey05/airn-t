@@ -275,11 +275,14 @@ Check your city: ${shareUrl}`;
                 <span className="font-bold">{economics.packsPerYear.toFixed(1)} PACKS/YR</span>
               </div>
               <div className="receipt-line">
-                <span>UNPAID TAR STREET VALUE</span>
+                <span>UNPAID TAR STREET VALUE (${packPriceUsd.toFixed(2)}/PK*)</span>
                 <span className="font-bold">
                   ${(economics.packsPerYear * packPriceUsd).toFixed(0)} / YR
                 </span>
               </div>
+            </div>
+            <div className="text-[10px] text-stone-600 -mt-1.5 mb-2.5">
+              *Pack price from WHO / Numbeo country retail average (USD).
             </div>
 
             {/* Marginal Utility Audit */}

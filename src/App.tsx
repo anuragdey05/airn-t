@@ -854,6 +854,7 @@ export function App() {
                 packPriceUsd={packPriceUsd}
                 onChangePackPrice={setPackPriceUsd}
                 cityName={cityData.city}
+                countryName={cityData.country}
               />
             </div>
           )}

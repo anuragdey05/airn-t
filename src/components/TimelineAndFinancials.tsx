@@ -10,6 +10,7 @@ interface TimelineAndFinancialsProps {
   packPriceUsd: number;
   onChangePackPrice: (price: number) => void;
   cityName: string;
+  countryName?: string;
 }
 
 export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
@@ -19,6 +20,7 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
   packPriceUsd,
   onChangePackPrice,
   cityName,
+  countryName,
 }) => {
   const maxDailyCigs = Math.max(
     1.5,
@@ -208,14 +210,17 @@ export const TimelineAndFinancials: React.FC<TimelineAndFinancialsProps> = ({
             </div>
             <input
               type="range"
-              min="2"
-              max="25"
+              min="1.5"
+              max="30"
               step="0.5"
               aria-label="Local pack price in US dollars"
               value={packPriceUsd}
               onChange={(e) => onChangePackPrice(parseFloat(e.target.value))}
               className="w-full noir-slider"
             />
+            <p className="text-[11px] font-mono-code text-stone-400 mt-1">
+              Auto-set for {countryName || cityName} from WHO Global Tobacco Report &amp; Numbeo 20-pack retail averages (USD). Drag slider to customize.
+            </p>
             <div className="mt-3 pt-2.5 border-t border-stone-900 flex items-center justify-between text-xs">
               <span className="text-stone-400">Implied Annual Tar Value:</span>
               <span className="font-mono-code font-bold text-emerald-300">
