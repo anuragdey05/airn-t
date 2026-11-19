@@ -1,0 +1,20 @@
+src/App.tsx
+  h_419a80373e9856 26-29,95-101,250-251,253,255-285,290-293,295,379,381-399,500-509
+src/components/LocationIgnitionGate.tsx
+  h_419a80373e9856 1-466
+src/index.css
+  h_419a80373e9856 76-179
+tests/ui.test.tsx
+  h_419a80373e9856 9,246-318
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9e343336707cff06271be9cf123c3f0deabf8e56",
+  "prompts": {},
+  "humans": {
+    "h_419a80373e9856": {
+      "author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
