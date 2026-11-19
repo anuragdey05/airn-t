@@ -1,0 +1,41 @@
+src/hooks/useMotionPause.ts
+  s_4a4ed006164353::t_618602b851be53 1-22
+src/components/AnimatedCigarettePack.tsx
+  s_4a4ed006164353::t_7e5edd7706e8c9 176
+  s_4a4ed006164353::t_30ca0c6fcb125d 3,5,32,155,170,173,184,191-197
+  s_1292af1bfe7809::t_ba0977da2e0f18 29,55-68,86-106,126-127,134-141,167
+tests/ui.test.tsx
+  s_4a4ed006164353::t_d89551ac2e8f17 120
+public/fonts/Ultra-LICENSE.txt
+  s_1292af1bfe7809::t_47c802ab917094 1-202
+src/lib/safeStorage.ts
+  s_4a4ed006164353::t_b2614eece7e926 1-20
+src/components/cigarette-pack.css
+  s_1292af1bfe7809::t_3cbf3f0169e4a8 20,67
+  s_4a4ed006164353::t_30ca0c6fcb125d 3,43-45,49,53,59-60,64
+  s_1292af1bfe7809::t_ba0977da2e0f18 1-2,4-6,15,24,40,58,68-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a367d33fec1ca45456ae89899a5d84196f0bba64",
+  "prompts": {},
+  "sessions": {
+    "s_1292af1bfe7809": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e449-4d1b-7640-8267-1d7e23340e45",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Anurag Dey <anuragdey2k@gmail.com>"
+    },
+    "s_4a4ed006164353": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7541e4e2-0019-4d5a-a57e-5d850ed4df24",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
