@@ -77,6 +77,18 @@
 .carton-face { position:relative; z-index:5; padding:25px 20px 15px; border:1px solid #635944; border-radius:2px 2px 5px 3px; background:radial-gradient(ellipse at 15% 0%,#3d3a31aa,transparent 65%),linear-gradient(105deg,#24251f,#181b17 55%,#10130f); box-shadow:inset 2px 0 1px #ffffff10,inset -2px 0 2px #0009,0 18px 28px #0006; }
 .carton-neck { position:absolute; top:-17px; left:23%; right:23%; height:21px; border:1px solid #a49675; border-top:0; background:linear-gradient(#cec3a5,#958767); clip-path:polygon(0 0,12% 100%,88% 100%,100% 0); }
 .carton-side { position:absolute; z-index:0; top:0; bottom:1px; left:calc(100% - 1px); width:var(--side-width); transform-origin:left; transform:skewY(var(--side-skew)); background:linear-gradient(90deg,#383a2f,#1c2118 72%,#10150e); border:1px solid #534c36; border-left:0; display:flex; flex-direction:column; align-items:center; padding:24px 0 16px; color:#b9a879; }
+/* The fixed side wall continues behind the cap up to its hinge. The rotating
+   side flap covers this inner board while the pack is closed. */
+.carton-side::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: -1px;
+  height: calc(var(--cap-height) + 1px);
+  border: 1px solid #72654f;
+  background: linear-gradient(90deg, #776b54, #514938 35%, #383427);
+}
 .carton-side > span { writing-mode:vertical-rl; font:9px var(--font-mono); letter-spacing:.15em; }
 .carton-side small { writing-mode:vertical-rl; font:7px var(--font-mono); margin-top:auto; }
 .carton-barcode { width:13px; height:55px; margin:20px 0 10px; background:repeating-linear-gradient(0deg,#b4ac8a 0 1px,transparent 1px 3px,#b4ac8a 3px 5px,transparent 5px 6px); }
