@@ -1,0 +1,21 @@
+src/components/AnimatedCigarettePack.tsx
+  s_1292af1bfe7809::t_63804d44d90b86 58-71,75,77,163-168
+src/components/cigarette-pack.css
+  s_1292af1bfe7809::t_63804d44d90b86 11-17,19-62,79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dcf6312f4ece981c7b194bd6b2de2106768792bd",
+  "prompts": {},
+  "sessions": {
+    "s_1292af1bfe7809": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e449-4d1b-7640-8267-1d7e23340e45",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
