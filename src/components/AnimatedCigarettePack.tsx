@@ -55,17 +55,26 @@ export const AnimatedCigarettePack: React.FC<AnimatedCigarettePackProps> = ({
       const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } });
       const raisedSticks = root.current?.querySelectorAll('.carton-cigarette[data-active="true"] .carton-cylinder');
       timeline
-        .fromTo('.carton-arrival', { y: 15, rotation: -2 }, { y: 0, rotation: 0, duration: .72 }, 0)
-        .fromTo('.carton-lid', { rotationX: -114 }, { rotationX: 28, duration: .52, ease: 'power2.inOut' }, .04)
-        .to('.carton-lid', { rotationX: 22, duration: .27, ease: 'power2.out' }, .56)
-        .fromTo('.carton-foil', { scaleY: .82, filter: 'brightness(.7)' },
-          { scaleY: 1, filter: 'brightness(1)', duration: .38, clearProps: 'filter' }, .24);
+        // Keep the whole interior (including an already-pulled +1) behind
+        // the closed cap until its lower edge has swung above the hinge.
+        .set('.carton-lid-mount', { zIndex: 6 }, 0)
+        .set('.carton-neck', { opacity: 0 }, 0)
+        .set('.carton-neck', { opacity: 1 }, .57)
+        .set('.carton-tray', { opacity: 0, pointerEvents: 'none' }, 0)
+        .fromTo('.carton-lid', { rotationX: 0 },
+          { rotationX: 166, duration: .70, ease: 'power2.inOut' }, .20)
+        .set('.carton-lid-mount', { zIndex: 1 }, .57)
+        .fromTo('.carton-tray', { y: 42 }, {
+          y: 0, opacity: 1, duration: .34, ease: 'power2.out',
+        }, .57)
+        .set('.carton-tray', { pointerEvents: 'auto' }, .91)
+        .to('.carton-lid', { rotationX: 160, duration: .18 }, .90);
       if (raisedSticks?.length) timeline
         .fromTo(raisedSticks,
           { y: 64, opacity: 0 },
-          { y: -4, opacity: 1, duration: .46, stagger: .017 }, .31)
+          { y: -4, opacity: 1, duration: .46, stagger: .017 }, .65)
         .to(raisedSticks,
-          { y: 0, duration: .22, stagger: .017 }, .77);
+          { y: 0, duration: .22, stagger: .017 }, 1.11);
     }, root);
     return () => context.revert();
   }, [reduced, replay, root]);
@@ -151,9 +160,12 @@ export const AnimatedCigarettePack: React.FC<AnimatedCigarettePackProps> = ({
         <div className="carton-ground" aria-hidden="true" />
         <div className="carton-arrival">
           <div ref={rig} className="carton-rig">
-            <div className="carton-lid" aria-hidden="true">
-              <div className="carton-lid-inner"><span translate="no">airn’t</span><small>20 CLASS A PARTICULATE EQUIVALENTS</small></div>
-              <div className="carton-lid-edge" />
+            <div className="carton-lid-mount" aria-hidden="true">
+              <div className="carton-lid">
+                <div className="carton-lid-outer" />
+                <div className="carton-lid-side" />
+                <div className="carton-lid-inner"><span translate="no">airn’t</span></div>
+              </div>
             </div>
             <div className="carton-cavity" aria-hidden="true" />
             <div className="carton-tray">
