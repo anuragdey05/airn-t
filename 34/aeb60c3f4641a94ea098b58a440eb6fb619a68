@@ -1,0 +1,35 @@
+src/components/LocationIgnitionGate.tsx
+  s_c16f274495d4f5::t_e4c4015feb19e8 9-10,25-31,40-127,129-130,138-143,161-175,180-182,186-189,195-197,201,203-204,206-207,225-230,233,235-241,244-251,253-256,258-269,271-276,281-287,289-291,294-296,300-303,306-308,313,318,326,328-329,332-334,345,358-360,364
+  s_c16f274495d4f5::t_b9d9481469fcea 362
+  s_c16f274495d4f5::t_bd9239a214641c 317
+  s_c16f274495d4f5::t_9f195d3fc21292 208,234
+  s_c16f274495d4f5::t_cc3068c2868444 32-39,128,131-137,184,270
+src/App.tsx
+  s_c16f274495d4f5::t_b9d9481469fcea 258
+src/components/ignition-gate.css
+  s_c16f274495d4f5::t_b9d9481469fcea 426-429,475
+  s_c16f274495d4f5::t_bd9239a214641c 200-213
+  s_c16f274495d4f5::t_7707ad4a5c1cc2 67,239,439
+  s_c16f274495d4f5::t_7f26b8cb7ecd4f 1-21,24-66,68-108,110-167,172-199,214-216,219-238,240-284,288-425,430-438,440-474,476-481
+  s_c16f274495d4f5::t_9f195d3fc21292 217
+  s_c16f274495d4f5::t_cc3068c2868444 22-23,109,168-171,285-287
+  s_c16f274495d4f5::t_d92a0daf3af579 218
+tests/ui.test.tsx
+  s_c16f274495d4f5::t_fd4b04d12c66d9 281,297,315
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "34aeb60c3f4641a94ea098b58a440eb6fb619a68",
+  "prompts": {},
+  "sessions": {
+    "s_c16f274495d4f5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f84de85-6fd6-4f28-aceb-8f2beeb26add",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
