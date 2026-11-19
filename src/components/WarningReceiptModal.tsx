@@ -9,6 +9,7 @@ import {
   shareOrDownloadCard,
 } from '../lib/shareCard';
 import { triggerHaptic } from '../lib/haptics';
+import { formatUsd } from '../lib/format';
 import {
   X,
   Copy,
@@ -19,6 +20,7 @@ import {
   Download,
   Smartphone,
   Monitor,
+  Loader2,
 } from 'lucide-react';
 
 interface WarningReceiptModalProps {
@@ -43,6 +45,7 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
   const [cardFormat, setCardFormat] = useState<ShareCardFormat>('story');
   const [viewMode, setViewMode] = useState<'card' | 'receipt'>('card');
   const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -72,13 +75,13 @@ export const WarningReceiptModal: React.FC<WarningReceiptModalProps> = ({
 
   const shareUrl = buildCityShareUrl(cityData.city);
 
-  const shareText = `🚬 airn't — My air in ${cityData.city} already smokes ${economics.effectiveCigsPerDay.toFixed(
+  const shareText = `🚬 airn’t — My air in ${cityData.city} already smokes ${economics.effectiveCigsPerDay.toFixed(
     1
   )} cigarettes a day!
 • 24h Mean PM2.5: ${cityData.pm25.toFixed(1)} µg/m³ (US AQI ${economics.usAqi})
-• Annual Habit: ${economics.packsPerYear.toFixed(1)} packs/yr ($${(
+• Annual Habit: ${economics.packsPerYear.toFixed(1)} packs/yr (${formatUsd(
     economics.packsPerYear * packPriceUsd
-  ).toFixed(0)}/yr)
+  )}/yr)
 • Pope (2009) Slope Discount: -${economics.marginalDamageDiscountPct.toFixed(0)}% vs clean air
 Check your city: ${shareUrl}`;
 
@@ -91,45 +94,56 @@ Check your city: ${shareUrl}`;
     }, 2600);
   };
 
-  const handleCopy = async () => {
+  const copyToClipboard = async (text: string, successMessage: string) => {
     triggerHaptic(10);
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
-      showTempStatus('Receipt & city link copied to clipboard.');
+      showTempStatus(successMessage);
     } catch {
       showTempStatus('Could not copy. Try Share Image or Print.');
     }
   };
+  const handleCopyText = () => copyToClipboard(shareText, 'Receipt text and city link copied.');
+  const handleCopyLink = () => copyToClipboard(shareUrl, 'City link copied.');
 
   const handleShareImage = async () => {
+    if (isSharing) return;
     triggerHaptic(15);
-    const result = await shareOrDownloadCard({
-      cityData,
-      economics,
-      hoursOutdoors,
-      packPriceUsd,
-      format: cardFormat,
-    });
-    if (result === 'shared') {
-      showTempStatus('Shared image card!');
-    } else if (result === 'downloaded') {
-      showTempStatus('Downloaded PNG share card & copied link!');
-    } else {
-      showTempStatus('Copied share text & city link!');
+    setIsSharing(true);
+    try {
+      const result = await shareOrDownloadCard({
+        cityData,
+        economics,
+        hoursOutdoors,
+        packPriceUsd,
+        format: cardFormat,
+      });
+      const messages: Record<typeof result, string> = {
+        shared: 'Image card shared.',
+        cancelled: 'Share cancelled.',
+        'downloaded-and-copied': 'PNG card downloaded and city link copied.',
+        downloaded: 'PNG card downloaded.',
+        copied: 'Share text and city link copied.',
+        failed: 'Could not share or copy. Try Print instead.',
+      };
+      showTempStatus(messages[result]);
+    } finally {
+      setIsSharing(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onClose={onClose} label="Atmospheric receipt">
-      <div className="receipt relative w-full max-w-md rounded-2xl bg-[#F4EFE6] text-stone-950 p-4 sm:p-6 shadow-2xl border-4 border-stone-900 font-mono-code">
+      <div className="receipt relative w-full max-w-md rounded-2xl bg-receipt text-stone-950 p-4 sm:p-6 shadow-2xl border-4 border-stone-900 font-mono-code">
         {/* Normal-flow Top Mode Switcher + Close button (no overlap) */}
-        <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-stone-900/15">
-          <div className="inline-flex rounded-xl bg-stone-900/10 p-1 border border-stone-900/20 text-xs">
+        <div className="flex items-start justify-between gap-2 pb-3 mb-3 border-b border-stone-900/15">
+          <div role="group" aria-label="Receipt view" className="inline-flex flex-wrap rounded-xl bg-stone-900/10 p-1 border border-stone-900/20 text-xs">
             <button
               type="button"
+              aria-pressed={viewMode === 'card'}
               onClick={() => setViewMode('card')}
-              className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-colors cursor-pointer !min-h-[34px] ${
+              className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 viewMode === 'card'
                   ? 'bg-stone-950 text-amber-300'
                   : 'text-stone-700 hover:text-stone-950'
@@ -139,8 +153,9 @@ Check your city: ${shareUrl}`;
             </button>
             <button
               type="button"
+              aria-pressed={viewMode === 'receipt'}
               onClick={() => setViewMode('receipt')}
-              className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-colors cursor-pointer !min-h-[34px] ${
+              className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 viewMode === 'receipt'
                   ? 'bg-stone-950 text-amber-300'
                   : 'text-stone-700 hover:text-stone-950'
@@ -154,7 +169,7 @@ Check your city: ${shareUrl}`;
             type="button"
             aria-label="Close receipt"
             onClick={onClose}
-            className="p-2 rounded-xl bg-stone-900/10 hover:bg-stone-900/20 text-stone-900 cursor-pointer !min-h-[36px] !min-w-[36px] flex items-center justify-center"
+            className="p-2 rounded-xl bg-stone-900/10 hover:bg-stone-900/20 text-stone-900 cursor-pointer flex items-center justify-center shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -163,18 +178,19 @@ Check your city: ${shareUrl}`;
         {viewMode === 'card' ? (
           <div className="space-y-3">
             {/* Story (9:16) vs Post (16:9) Format Toggle */}
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="font-bold uppercase text-stone-700">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span id="card-format-label" className="font-bold uppercase text-stone-700">
                 Format:
               </span>
-              <div className="inline-flex gap-1.5">
+              <div role="group" aria-labelledby="card-format-label" className="inline-flex flex-wrap gap-1.5">
                 <button
                   type="button"
+                  aria-pressed={cardFormat === 'story'}
                   onClick={() => setCardFormat('story')}
-                  className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1 whitespace-nowrap cursor-pointer !min-h-[34px] ${
+                  className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1 whitespace-nowrap cursor-pointer transition-colors ${
                     cardFormat === 'story'
                       ? 'bg-stone-950 text-amber-300 border-stone-950 font-bold'
-                      : 'bg-white/60 text-stone-800 border-stone-400'
+                      : 'bg-white/60 text-stone-800 border-stone-400 hover:bg-white hover:border-stone-600'
                   }`}
                 >
                   <Smartphone className="w-3.5 h-3.5" />
@@ -182,11 +198,12 @@ Check your city: ${shareUrl}`;
                 </button>
                 <button
                   type="button"
+                  aria-pressed={cardFormat === 'landscape'}
                   onClick={() => setCardFormat('landscape')}
-                  className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1 whitespace-nowrap cursor-pointer !min-h-[34px] ${
+                  className={`px-2.5 py-1 rounded-lg border text-xs flex items-center gap-1 whitespace-nowrap cursor-pointer transition-colors ${
                     cardFormat === 'landscape'
                       ? 'bg-stone-950 text-amber-300 border-stone-950 font-bold'
-                      : 'bg-white/60 text-stone-800 border-stone-400'
+                      : 'bg-white/60 text-stone-800 border-stone-400 hover:bg-white hover:border-stone-600'
                   }`}
                 >
                   <Monitor className="w-3.5 h-3.5" />
@@ -196,9 +213,10 @@ Check your city: ${shareUrl}`;
             </div>
 
             {/* Live Canvas Preview */}
-            <div className="rounded-xl overflow-hidden border-2 border-stone-900 bg-[#0B0A09] flex items-center justify-center max-h-[330px] p-1">
+            <div className="rounded-xl overflow-hidden border-2 border-stone-900 bg-surface flex items-center justify-center max-h-[330px] p-1">
               <canvas
                 ref={setCanvasEl}
+                role="img"
                 aria-label={`Share card preview: My air already smokes ${economics.effectiveCigsPerDay.toFixed(
                   1
                 )} cigarettes a day in ${cityData.city}`}
@@ -214,8 +232,8 @@ Check your city: ${shareUrl}`;
               <span className="truncate text-stone-700 pl-1">{shareUrl}</span>
               <button
                 type="button"
-                onClick={handleCopy}
-                className="px-2.5 py-1 rounded-lg bg-stone-900 text-amber-300 font-bold shrink-0 cursor-pointer !min-h-[32px]"
+                onClick={handleCopyLink}
+                className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-amber-300 font-bold shrink-0 cursor-pointer transition-colors"
               >
                 Copy Link
               </button>
@@ -241,13 +259,13 @@ Check your city: ${shareUrl}`;
             {/* Receipt Header */}
             <div className="text-center border-b border-dashed border-stone-400 pb-2.5 mb-2.5">
               <div className="text-sm font-bold tracking-widest uppercase">
-                airn&apos;t // TAR TAX RECEIPT
+                airn’t // TAR TAX RECEIPT
               </div>
               <div className="text-xs text-stone-600">
                 LOC: {cityData.city.toUpperCase()} ({cityData.latitude.toFixed(2)}°,{' '}
                 {cityData.longitude.toFixed(2)}°)
               </div>
-              <div className="text-xs text-stone-500">
+              <div className="text-xs text-stone-600">
                 24H MEAN • {cityData.source} • {cityData.updatedAt}
               </div>
             </div>
@@ -275,13 +293,13 @@ Check your city: ${shareUrl}`;
                 <span className="font-bold">{economics.packsPerYear.toFixed(1)} PACKS/YR</span>
               </div>
               <div className="receipt-line">
-                <span>UNPAID TAR STREET VALUE (${packPriceUsd.toFixed(2)}/PK*)</span>
+                <span>UNPAID TAR STREET VALUE ({formatUsd(packPriceUsd, 2)}/PK*)</span>
                 <span className="font-bold">
-                  ${(economics.packsPerYear * packPriceUsd).toFixed(0)} / YR
+                  {formatUsd(economics.packsPerYear * packPriceUsd)} / YR
                 </span>
               </div>
             </div>
-            <div className="text-[10px] text-stone-600 -mt-1.5 mb-2.5">
+            <div className="text-xs text-stone-600 -mt-1.5 mb-2.5">
               *Pack price from WHO / Numbeo country retail average (USD).
             </div>
 
@@ -308,8 +326,8 @@ Check your city: ${shareUrl}`;
           </div>
         )}
 
-        <p role="status" className="copy-status text-xs font-bold min-h-[18px] mb-2">
-          {statusMessage || (copied ? 'Receipt copied.' : '')}
+        <p role="status" aria-live="polite" className="copy-status text-xs font-bold min-h-[18px] mb-2">
+          {statusMessage || (copied ? 'Copied.' : '')}
         </p>
 
         {/* Primary Share & Copy Actions */}
@@ -317,32 +335,34 @@ Check your city: ${shareUrl}`;
           <button
             type="button"
             onClick={handleShareImage}
-            className="flex-1 py-2.5 px-3 rounded-xl bg-stone-950 text-amber-300 hover:bg-stone-800 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            disabled={isSharing}
+            aria-busy={isSharing}
+            className="flex-1 py-2.5 px-3 rounded-xl bg-stone-950 text-amber-300 hover:bg-stone-800 disabled:cursor-progress text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            <Share2 className="w-4 h-4" />
-            <span>Share / Save PNG</span>
+            {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+            <span>{isSharing ? 'Preparing…' : 'Share / Save PNG'}</span>
             <Download className="w-3.5 h-3.5 opacity-75" />
           </button>
 
           <button
             type="button"
-            onClick={handleCopy}
+            onClick={handleCopyText}
             className="py-2.5 px-3 rounded-xl border-2 border-stone-900 hover:bg-stone-900/10 text-stone-900 text-xs font-bold uppercase flex items-center gap-1 cursor-pointer"
-            title="Copy text & deep link"
           >
             {copied ? (
               <Check className="w-4 h-4 text-emerald-700" />
             ) : (
               <Copy className="w-4 h-4" />
             )}
-            <span>Copy</span>
+            <span>Copy Text</span>
           </button>
 
           <button
             type="button"
             onClick={() => window.print()}
+            aria-label="Print or save as PDF"
+            title="Print or save as PDF"
             className="p-2.5 rounded-xl border-2 border-stone-900 hover:bg-stone-900/10 text-stone-900 cursor-pointer"
-            title="Print / Save as PDF"
           >
             <Printer className="w-4 h-4" />
           </button>

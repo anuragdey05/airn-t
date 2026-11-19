@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import {
   EconomicBreakdown,
   marginalHealthCostOfOneCig,
@@ -17,11 +17,27 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'pope_concave' | 'marginal_cost'>('pope_concave');
 
+  // Lay the chart out in real pixels (1 SVG unit ≈ 1 CSS px) so text stays legible on phones,
+  // instead of shrinking a fixed 640-wide drawing down to ~50%.
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [frameWidth, setFrameWidth] = useState(640);
+  useLayoutEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    setFrameWidth(el.getBoundingClientRect().width);
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => setFrameWidth(entry.contentRect.width));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const width = Math.round(Math.min(1040, Math.max(300, frameWidth || 640)));
+  const isNarrow = width < 480;
+  const tickCount = isNarrow ? 4 : 7;
+
   const maxCigDomain = Math.max(12, Math.ceil(economics.effectiveCigsPerDay + 3));
-  const width = 640;
-  const height = 270;
-  const padLeft = 54;
-  const padRight = 28;
+  const height = isNarrow ? 240 : 270;
+  const padLeft = isNarrow ? 46 : 54;
+  const padRight = isNarrow ? 14 : 28;
   const padTop = 26;
   const padBottom = 42;
   const plotW = width - padLeft - padRight;
@@ -80,25 +96,31 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
   const zeroY_RR = yForRR(popeRelativeRisk(0));
   const oneY_RR = yForRR(popeRelativeRisk(1));
 
+  // Current-city callout: narrower box and an ellipsised city name on small screens
+  const calloutW = isNarrow ? 214 : 254;
+  const maxCityChars = isNarrow ? 10 : 18;
+  const calloutCity =
+    cityName.length > maxCityChars ? `${cityName.slice(0, maxCityChars - 1).trimEnd()}…` : cityName;
+
   // Tab 2 current coordinates
   const curMcPct = (economics.marginalHealthCostCurrent / mc0) * 100;
   const curY_MC = yForMcPct(curMcPct);
   const curY_Prop = yForMcPct(economics.smokingPropensityPct);
 
   return (
-    <div className="rounded-2xl border border-stone-800/90 bg-[#12100E]/95 p-5 sm:p-6 shadow-2xl">
+    <div className="rounded-2xl border border-stone-800/90 bg-panel/95 p-5 sm:p-6 shadow-2xl">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-stone-800/80">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono-code uppercase tracking-widest text-amber-400">
             <Activity className="w-3.5 h-3.5" />
             <span>Econometric & Epidemiological Proof Engine</span>
           </div>
-          <h3 className="text-lg font-serif-editorial tracking-wide text-stone-100 mt-0.5">
+          <h2 className="font-serif-editorial tracking-wide text-stone-100 mt-0.5">
             Why Higher AQI Lowers the Marginal Cost of Lighting Up
-          </h3>
+          </h2>
         </div>
 
-        <div className="inline-flex rounded-xl bg-stone-950 p-1 border border-stone-800">
+        <div role="group" aria-label="Chart view" className="inline-flex flex-wrap rounded-xl bg-stone-950 p-1 border border-stone-800">
           <button
             type="button"
             aria-pressed={activeTab === 'pope_concave'}
@@ -130,7 +152,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
       <p className="text-xs sm:text-sm text-stone-300 mb-3">
         <strong>{cityName}:</strong> {economics.effectiveCigsPerDay.toFixed(2)} passive cigarettes/day · slope discount -{economics.marginalDamageDiscountPct.toFixed(0)}% · illustrative temptation index {economics.smokingPropensityPct}%.
       </p>
-      <div className="w-full" role="region" aria-label="Economic model chart">
+      <div ref={frameRef} className="w-full" role="region" aria-label="Economic model chart">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
@@ -165,7 +187,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
                   x={padLeft - 8}
                   y={y + 4}
                   textAnchor="end"
-                  className="fill-stone-500 text-xs font-mono-code"
+                  className="fill-stone-400 text-xs font-mono-code"
                 >
                   {label}
                 </text>
@@ -174,8 +196,8 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
           })}
 
           {/* X-Axis Ticks (Cigarettes per day) */}
-          {Array.from({ length: 7 }, (_, i) => {
-            const val = Math.round((i / 6) * maxCigDomain);
+          {Array.from({ length: tickCount }, (_, i) => {
+            const val = Math.round((i / (tickCount - 1)) * maxCigDomain);
             const x = xForCig(val);
             return (
               <g key={i}>
@@ -189,10 +211,10 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
                 <text
                   x={x}
                   y={height - 14}
-                  textAnchor="middle"
+                  textAnchor={i === tickCount - 1 ? 'end' : i === 0 ? 'start' : 'middle'}
                   className="fill-stone-400 text-xs font-mono-code"
                 >
-                  {val} cigs
+                  {isNarrow ? val : `${val} cigs`}
                 </text>
               </g>
             );
@@ -239,7 +261,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
                 y={(zeroY_RR + oneY_RR) / 2 + 3}
                 className="fill-emerald-400 text-xs font-mono-code"
               >
-                Clean Air ΔRisk (+{(economics.marginalHealthCostPristine * 100).toFixed(1)}%)
+                {isNarrow ? 'Clean air' : 'Clean Air ΔRisk'} (+{(economics.marginalHealthCostPristine * 100).toFixed(1)}%)
               </text>
 
               {/* Current City Marginal Step Triangle (C_env -> C_env + 1) */}
@@ -284,27 +306,27 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
               />
 
               <rect
-                x={Math.min(width - padRight - 258, Math.max(padLeft + 8, curX - 110))}
+                x={Math.min(width - padRight - calloutW - 4, Math.max(padLeft + 8, curX - 110))}
                 y={Math.max(padTop + 4, curY_RR - 46)}
-                width="254"
+                width={calloutW}
                 height="38"
                 rx="6"
                 fill="rgba(18, 16, 14, 0.94)"
                 stroke="rgba(245, 158, 11, 0.45)"
               />
               <text
-                x={Math.min(width - padRight - 248, Math.max(padLeft + 18, curX - 100))}
+                x={Math.min(width - padRight - calloutW + 6, Math.max(padLeft + 18, curX - 100))}
                 y={Math.max(padTop + 19, curY_RR - 31)}
-                className="fill-amber-300 text-[11px] font-mono-code font-semibold"
+                className="fill-amber-300 text-xs font-mono-code font-semibold"
               >
-                {cityName.slice(0, 18)}: {economics.effectiveCigsPerDay.toFixed(2)} cigs/day
+                {calloutCity}: {economics.effectiveCigsPerDay.toFixed(2)} cigs/day
               </text>
               <text
-                x={Math.min(width - padRight - 248, Math.max(padLeft + 18, curX - 100))}
+                x={Math.min(width - padRight - calloutW + 6, Math.max(padLeft + 18, curX - 100))}
                 y={Math.max(padTop + 34, curY_RR - 16)}
-                className="fill-rose-300 text-[11px] font-mono-code"
+                className="fill-rose-300 text-xs font-mono-code"
               >
-                +1 Cig ΔRisk: +{(economics.marginalHealthCostCurrent * 100).toFixed(2)}% (-
+                +1 cig: +{(economics.marginalHealthCostCurrent * 100).toFixed(2)}% (−
                 {economics.marginalDamageDiscountPct.toFixed(0)}% slope)
               </text>
             </>
@@ -347,29 +369,24 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
                 className="fill-rose-400 stroke-stone-950 stroke-2"
               />
 
-              {/* Legend */}
-              <g transform={`translate(${padLeft + 10}, ${padTop + 8})`}>
-                <rect
-                  x="0"
-                  y="0"
-                  width="320"
-                  height="46"
-                  rx="6"
-                  fill="rgba(12, 10, 9, 0.9)"
-                  stroke="rgba(255,255,255,0.08)"
-                />
-                <circle cx="14" cy="15" r="4" fill="#10B981" />
-                <text x="24" y="19" className="fill-emerald-300 text-[11px] font-mono-code">
-                  Marginal Health Cost MC(C) [{curMcPct.toFixed(0)}% of clean air]
-                </text>
-                <circle cx="14" cy="33" r="4" fill="#F43F5E" />
-                <text x="24" y="37" className="fill-rose-300 text-[11px] font-mono-code">
-                  Illustrative Temptation Index [{economics.smokingPropensityPct}%]
-                </text>
-              </g>
             </>
           )}
         </svg>
+        {activeTab === 'marginal_cost' && (
+          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-mono-code">
+            <li className="flex items-center gap-1.5 text-emerald-300">
+              <span aria-hidden="true" className="inline-block w-3 h-0.5 bg-emerald-500" />
+              Marginal Health Cost MC(C) [{curMcPct.toFixed(0)}% of clean air]
+            </li>
+            <li className="flex items-center gap-1.5 text-rose-300">
+              <span aria-hidden="true" className="inline-block w-3 border-t-2 border-dashed border-rose-500" />
+              Illustrative Temptation Index [{economics.smokingPropensityPct}%]
+            </li>
+          </ul>
+        )}
+        <p className="mt-1 text-xs font-mono-code text-stone-400">
+          X-axis: passive cigarettes per day · Y-axis: {activeTab === 'pope_concave' ? 'relative mortality risk' : '% of clean-air value'}
+        </p>
       </div>
 
       {/* Concise Mathematical Proof Box */}
@@ -410,7 +427,7 @@ export const EconomicsCurveChart: React.FC<EconomicsCurveChartProps> = ({
             <strong className="text-rose-300">
               +{economics.weberRelativeIncreasePct > 999 ? '>999' : economics.weberRelativeIncreasePct.toFixed(1)}%
             </strong>{' '}
-            jump over today’s 24h ambient dose. Our 1–99% Temptation Index is an illustrative behavioral composite, not a clinical metric.
+            jump over today’s 24h ambient dose. The 1–99% Temptation Index is an illustrative behavioral composite, not a clinical metric.
           </p>
         </div>
       </div>

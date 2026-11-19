@@ -24,6 +24,8 @@ import { ShouldYouSmokeCard } from './components/ShouldYouSmokeCard';
 import { ExposureBottomSheet } from './components/ExposureBottomSheet';
 import { WarningReceiptModal } from './components/WarningReceiptModal';
 import { scrollToTop, triggerHaptic } from './lib/haptics';
+import { safeStorage } from './lib/safeStorage';
+import { CitySearchResults, onCitySearchKeyDown } from './components/CitySearchResults';
 import {
   BookOpen,
   Calendar,
@@ -77,36 +79,11 @@ function parseInitialTab(): ActiveTab {
   return 'pack';
 }
 
-function CitySearchDropdown({
-  results,
-  onSelect,
-  className,
-}: {
-  results: GeocodingResult[];
-  onSelect: (geo: GeocodingResult) => void;
-  className: string;
-}) {
-  if (results.length === 0) return null;
-  return (
-    <div className={className}>
-      {results.map((geo) => (
-        <button
-          key={geo.id}
-          type="button"
-          onClick={() => onSelect(geo)}
-          className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-stone-900 flex items-center justify-between border-b border-stone-900 last:border-0 cursor-pointer"
-        >
-          <div>
-            <span className="font-semibold text-stone-100">{geo.name}</span>
-            {geo.admin1 && <span className="text-stone-400">, {geo.admin1}</span>}
-            <span className="text-stone-400"> — {geo.country}</span>
-          </div>
-          <span className="font-mono-code text-xs text-amber-400">Load →</span>
-        </button>
-      ))}
-    </div>
-  );
-}
+const WAQI_TOKEN_KEY = 'aqi_to_cig_waqi_token';
+
+/** Plain left-clicks navigate in-app; modified clicks (new tab/window) fall through to the href. */
+const isPlainClick = (event: React.MouseEvent) =>
+  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>(parseInitialTab);
@@ -179,10 +156,13 @@ export function App() {
   const [isDetectingLoc, setIsDetectingLoc] = useState<boolean>(false);
 
   // Hybrid WAQI Token State
-  const [waqiToken, setWaqiToken] = useState<string>(
-    () => localStorage.getItem('aqi_to_cig_waqi_token') || ''
-  );
+  const [waqiToken, setWaqiToken] = useState<string>(() => safeStorage.get(WAQI_TOKEN_KEY) || '');
   const [showTokenPopover, setShowTokenPopover] = useState<boolean>(false);
+  const tokenTriggerRef = useRef<HTMLButtonElement>(null);
+  const tokenInputRef = useRef<HTMLInputElement>(null);
+  const tokenPopoverRef = useRef<HTMLFormElement>(null);
+  const desktopSearchRef = useRef<HTMLInputElement>(null);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
 
   // Global Benchmarks State
   const [benchmarks, setBenchmarks] = useState<
@@ -202,11 +182,59 @@ export function App() {
     setIsInitialResolving(false);
   };
 
+  const hrefForTab = (tab: ActiveTab) => {
+    if (typeof window === 'undefined') return '/';
+    const params = new URLSearchParams(window.location.search);
+    if (cityData.id !== 'resolving') params.set('city', cityData.city);
+    if (tab === 'pack') params.delete('tab');
+    else params.set('tab', tab);
+    const query = params.toString();
+    return `${window.location.pathname}${query ? `?${query}` : ''}`;
+  };
+
   const switchTab = (tab: ActiveTab) => {
     triggerHaptic(8);
+    if (tab !== activeTab) window.history.pushState(null, '', hrefForTab(tab));
     setActiveTab(tab);
     scrollToTop();
   };
+
+  const tabLinkHandler = (tab: ActiveTab) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!isPlainClick(event)) return;
+    event.preventDefault();
+    switchTab(tab);
+  };
+
+  // Browser Back/Forward moves between tabs
+  useEffect(() => {
+    const onPop = () => setActiveTab(parseInitialTab());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  // WAQI token popover: focus the field on open; close on Escape or an outside click
+  const closeTokenPopover = (returnFocus = true) => {
+    setShowTokenPopover(false);
+    if (returnFocus) tokenTriggerRef.current?.focus();
+  };
+  useEffect(() => {
+    if (!showTokenPopover) return;
+    tokenInputRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeTokenPopover();
+    };
+    const onPointer = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (tokenPopoverRef.current?.contains(target) || tokenTriggerRef.current?.contains(target)) return;
+      closeTokenPopover(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointer);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPointer);
+    };
+  }, [showTokenPopover]);
 
   // On mount: check ?city= deep link first; otherwise detect user's real location
   useEffect(() => {
@@ -292,7 +320,7 @@ export function App() {
     }
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState(null, '', newUrl);
-    document.title = `airn't — ${economics.effectiveCigsPerDay.toFixed(1)} cigarettes/day in ${
+    document.title = `airn’t — ${economics.effectiveCigsPerDay.toFixed(1)} cigarettes/day in ${
       cityData.city
     } (AQI ${economics.usAqi})`;
   }, [cityData.city, cityData.id, activeTab, economics.effectiveCigsPerDay, economics.usAqi, isInitialResolving]);
@@ -342,8 +370,8 @@ export function App() {
 
   const handleSaveWaqiToken = async (newToken: string) => {
     setWaqiToken(newToken);
-    localStorage.setItem('aqi_to_cig_waqi_token', newToken);
-    setShowTokenPopover(false);
+    safeStorage.set(WAQI_TOKEN_KEY, newToken);
+    closeTokenPopover();
     const request = ++primaryRequest.current;
     setLocationError('');
     setIsDetectingLoc(true);
@@ -362,7 +390,9 @@ export function App() {
       applyPrimaryCity(refreshed);
     } catch {
       if (request === primaryRequest.current)
-        setLocationError('Could not refresh station telemetry.');
+        setLocationError(
+          'Could not refresh ground-station data with this token. Check the token and try again, or clear it to use Open-Meteo only.'
+        );
     } finally {
       if (request === primaryRequest.current) setIsDetectingLoc(false);
     }
@@ -435,7 +465,10 @@ export function App() {
   };
 
   return (
-    <div className="app-shell min-h-screen relative bg-[#0B0A09] text-[#F2EDE4] pb-24">
+    <div className="app-shell min-h-screen relative bg-surface text-paper pb-24">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
       {/* Dynamic Atmospheric Smog Haze Layer */}
       <div
         ref={ambientRef}
@@ -447,13 +480,14 @@ export function App() {
       />
 
       {/* COMPACT MOBILE-FIRST TOP BAR */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0B0A09]/85 border-b border-stone-800/80">
+      <header className="app-header sticky top-0 z-40 backdrop-blur-xl bg-surface/85 border-b border-stone-800/80">
         <div className="max-w-5xl mx-auto px-3.5 sm:px-6 py-2.5 flex items-center justify-between gap-2">
           {/* Brand Logo */}
-          <button
-            type="button"
-            onClick={() => switchTab('pack')}
-            className="flex items-center gap-2 text-left cursor-pointer shrink-0"
+          <a
+            href={hrefForTab('pack')}
+            onClick={tabLinkHandler('pack')}
+            aria-label="airn’t home"
+            className="flex items-center gap-2 text-left cursor-pointer shrink-0 min-h-11"
           >
             <img
               src="/favicon-32.png"
@@ -462,10 +496,10 @@ export function App() {
               height={28}
               className="w-7 h-7 rounded-lg border border-stone-800 object-cover"
             />
-            <span className="font-serif-editorial italic text-xl tracking-wide text-stone-100">
-              airn&apos;t
+            <span translate="no" className="font-serif-editorial italic text-xl tracking-wide text-stone-100">
+              airn’t
             </span>
-          </button>
+          </a>
 
           {/* Center / Right Location Pill + Search + Share */}
           <div className="flex items-center gap-1.5 sm:gap-2">
@@ -473,11 +507,18 @@ export function App() {
             <div className="hidden sm:block relative w-64">
               <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
-                type="text"
+                ref={desktopSearchRef}
+                type="search"
+                name="city-search"
+                autoComplete="off"
+                spellCheck={false}
                 aria-label="Search cities"
+                aria-controls="header-search-results"
+                aria-expanded={headerResults.length > 0}
                 value={headerSearch}
                 onChange={(e) => handleHeaderSearchChange(e.target.value)}
-                placeholder="Check any city worldwide..."
+                onKeyDown={(e) => onCitySearchKeyDown(e, 'header-search-results', () => header.change(''))}
+                placeholder="Check any city worldwide…"
                 className="w-full pl-8 pr-8 py-1.5 rounded-xl bg-stone-950/90 border border-stone-800 text-xs text-stone-100 placeholder:text-stone-400 focus:outline-none focus:border-amber-500/60"
               />
               {isHeaderSearching && (
@@ -488,9 +529,13 @@ export function App() {
                   {header.message}
                 </p>
               )}
-              <CitySearchDropdown
+              <CitySearchResults
+                id="header-search-results"
                 results={headerResults}
                 onSelect={handleSelectHeaderCity}
+                actionLabel="Load"
+                inputRef={desktopSearchRef}
+                onEscape={() => header.change('')}
                 className="absolute left-0 right-0 mt-1.5 rounded-xl bg-stone-950 border border-stone-700 shadow-2xl overflow-hidden z-50 max-h-64 overflow-y-auto"
               />
             </div>
@@ -499,7 +544,10 @@ export function App() {
             <button
               type="button"
               onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
-              className="sm:hidden px-2.5 py-1.5 rounded-xl bg-stone-900 border border-stone-800 text-xs font-mono-code text-stone-200 flex items-center gap-1.5 max-w-[165px] truncate cursor-pointer"
+              aria-label={`Search cities (current: ${cityData.city})`}
+              aria-expanded={isSearchOpenMobile}
+              aria-controls="mobile-city-search"
+              className="mobile-city-trigger sm:hidden px-2.5 py-1.5 rounded-xl bg-stone-900 border border-stone-800 text-xs font-mono-code text-stone-200 flex items-center gap-1.5 max-w-[165px] truncate cursor-pointer"
             >
               <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span className="truncate">{cityData.city}</span>
@@ -511,8 +559,10 @@ export function App() {
               type="button"
               onClick={handleDetectMyLocation}
               disabled={isDetectingLoc}
+              aria-busy={isDetectingLoc}
+              aria-label={isDetectingLoc ? 'Detecting your location' : 'Use my current location'}
+              title="Use my current location"
               className="p-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 border border-stone-800 transition-colors cursor-pointer"
-              title="Detect My Current Location"
             >
               {isDetectingLoc ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -524,21 +574,35 @@ export function App() {
             {/* Hybrid WAQI API Key Button */}
             <div className="relative">
               <button
+                ref={tokenTriggerRef}
                 type="button"
                 onClick={() => setShowTokenPopover(!showTokenPopover)}
+                aria-label={waqiToken ? 'WAQI station token (set)' : 'WAQI station token (not set)'}
+                aria-expanded={showTokenPopover}
+                aria-controls="waqi-token-popover"
                 className={`p-2 rounded-xl border text-xs transition-colors cursor-pointer ${
                   waqiToken
                     ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
                     : 'bg-stone-900 border-stone-800 text-stone-400 hover:text-stone-200'
                 }`}
-                title="Hybrid WAQI Ground-Station API Token"
+                title="WAQI ground-station token"
               >
                 <KeyRound className="w-3.5 h-3.5" />
               </button>
 
               {showTokenPopover && (
-                <div className="token-popover absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-stone-950 border border-stone-700 p-4 shadow-2xl z-50 text-xs">
-                  <div className="font-mono-code font-bold text-amber-300 uppercase mb-1">
+                <form
+                  ref={tokenPopoverRef}
+                  id="waqi-token-popover"
+                  role="group"
+                  aria-labelledby="waqi-token-title"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    handleSaveWaqiToken(tokenInputRef.current?.value.trim() || '');
+                  }}
+                  className="token-popover absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-stone-950 border border-stone-700 p-4 shadow-2xl z-50 text-xs"
+                >
+                  <div id="waqi-token-title" className="font-mono-code font-bold text-amber-300 uppercase mb-1">
                     Hybrid AQI Station Token
                   </div>
                   <p className="text-stone-400 leading-relaxed mb-2.5">
@@ -554,35 +618,33 @@ export function App() {
                     to fuse local ground-station sensors.
                   </p>
                   <input
+                    ref={tokenInputRef}
                     type="text"
+                    name="waqi-token"
+                    autoComplete="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     defaultValue={waqiToken}
-                    placeholder="Optional WAQI token..."
-                    id="waqi-token-input"
+                    placeholder="Optional WAQI token…"
                     aria-label="Optional WAQI token"
                     className="w-full px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-700 text-stone-100 font-mono-code text-xs mb-2"
                   />
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
-                      onClick={() => setShowTokenPopover(false)}
-                      className="px-2.5 py-1 rounded-lg text-stone-400 cursor-pointer"
+                      onClick={() => closeTokenPopover()}
+                      className="px-2.5 py-1 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-900 cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
-                      type="button"
-                      onClick={() => {
-                        const el = document.getElementById(
-                          'waqi-token-input'
-                        ) as HTMLInputElement | null;
-                        handleSaveWaqiToken(el?.value || '');
-                      }}
-                      className="px-3 py-1 rounded-lg bg-amber-500 text-stone-950 font-mono-code font-semibold cursor-pointer"
+                      type="submit"
+                      className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono-code font-semibold cursor-pointer"
                     >
-                      Save
+                      Save Token
                     </button>
                   </div>
-                </div>
+                </form>
               )}
             </div>
 
@@ -593,8 +655,9 @@ export function App() {
                 triggerHaptic(12);
                 setIsReceiptOpen(true);
               }}
+              aria-label="Share card and receipt"
+              title="Share card and receipt"
               className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-mono-code font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer shadow-md shadow-amber-500/15"
-              title="Share Card & Atmospheric Receipt"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Share</span>
@@ -604,16 +667,30 @@ export function App() {
 
         {/* Mobile Expandable Search Drawer */}
         {isSearchOpenMobile && (
-          <div className="sm:hidden px-3.5 pb-3 pt-1 border-t border-stone-800/80 bg-stone-950/95">
+          <div id="mobile-city-search" className="sm:hidden px-3.5 pb-3 pt-1 border-t border-stone-800/80 bg-stone-950/95">
             <div className="relative flex items-center">
               <Search className="w-4 h-4 text-amber-400 absolute left-3 pointer-events-none" />
+              {/* autoFocus is intentional: this field only mounts after the user taps "search". */}
               <input
-                type="text"
+                ref={mobileSearchRef}
+                type="search"
+                name="city-search-mobile"
+                autoComplete="off"
+                spellCheck={false}
                 autoFocus
+                enterKeyHint="search"
                 aria-label="Search cities"
+                aria-controls="mobile-search-results"
+                aria-expanded={headerResults.length > 0}
                 value={headerSearch}
                 onChange={(e) => handleHeaderSearchChange(e.target.value)}
-                placeholder="Type any city (e.g. Tokyo, London, Mumbai)..."
+                onKeyDown={(e) =>
+                  onCitySearchKeyDown(e, 'mobile-search-results', () => {
+                    header.change('');
+                    setIsSearchOpenMobile(false);
+                  })
+                }
+                placeholder="Type any city (e.g. Tokyo, London, Mumbai)…"
                 className="w-full pl-9 pr-9 py-2 rounded-xl bg-stone-900 border border-stone-700 text-xs text-stone-100 placeholder:text-stone-400 focus:outline-none focus:border-amber-400"
               />
               <button
@@ -623,7 +700,7 @@ export function App() {
                   setIsSearchOpenMobile(false);
                   header.change('');
                 }}
-                className="absolute right-2.5 text-stone-400"
+                className="absolute right-0.5 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -633,9 +710,13 @@ export function App() {
                 {header.message}
               </p>
             )}
-            <CitySearchDropdown
+            <CitySearchResults
+              id="mobile-search-results"
               results={headerResults}
               onSelect={handleSelectHeaderCity}
+              actionLabel="Load"
+              inputRef={mobileSearchRef}
+              onEscape={() => header.change('')}
               className="mt-1.5 rounded-xl bg-stone-900 border border-stone-800 divide-y divide-stone-800 max-h-56 overflow-y-auto"
             />
           </div>
@@ -644,9 +725,17 @@ export function App() {
 
       {/* MAIN VIEWPORT CONTENT */}
       <main
+        id="main-content"
+        tabIndex={-1}
         key={activeTab}
         className="tab-content relative z-10 max-w-5xl mx-auto px-3.5 sm:px-6 pt-3 sm:pt-5"
       >
+        <h1 className="sr-only">
+          {isInitialResolving
+            ? 'airn’t: your air quality in cigarettes'
+            : `${cityData.city}: ${economics.effectiveCigsPerDay.toFixed(1)} passive cigarettes per day (US AQI ${economics.usAqi})`}
+        </h1>
+
         {locationError && (
           <p role="status" className="status-message mb-4">
             {locationError}
@@ -658,9 +747,9 @@ export function App() {
           <div className="pack-layout">
             {/* Compact Top Status + "Tune Exposure" Trigger Pill */}
             <div className="pack-status w-full flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                 <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="text-sm font-semibold text-stone-100">
+                <span className="text-sm font-semibold text-stone-100 break-words min-w-0">
                   {cityData.city}
                 </span>
                 <span
@@ -679,10 +768,10 @@ export function App() {
                   <button
                     type="button"
                     onClick={() => setManualPm25Override(null)}
-                    className="text-xs font-mono-code px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-0.5 cursor-pointer"
+                    className="text-xs font-mono-code px-1.5 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 flex items-center gap-1 cursor-pointer"
                   >
-                    <RotateCcw className="w-2.5 h-2.5" />
-                    <span>Sim</span>
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset Simulation</span>
                   </button>
                 )}
               </div>
@@ -707,7 +796,7 @@ export function App() {
               <div
                 role="status"
                 aria-label="Sampling your local air quality"
-                className="w-full max-w-md mx-auto my-4 rounded-3xl border border-stone-800/90 bg-[#12100E]/90 p-8 text-center space-y-4 animate-pulse"
+                className="w-full max-w-md mx-auto my-4 rounded-3xl border border-stone-800/90 bg-panel/90 p-8 text-center space-y-4 animate-pulse"
               >
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
                   <Loader2 className="w-6 h-6 animate-spin" />
@@ -755,6 +844,7 @@ export function App() {
                   }
                   onOpenShareModal={() => setIsReceiptOpen(true)}
                   onOpenScienceTab={() => switchTab('science')}
+                  scienceHref={hrefForTab('science')}
                 />
               </>
             )}
@@ -763,13 +853,13 @@ export function App() {
             <div className="city-shortcuts w-full pt-1">
               <div className="flex items-center justify-between text-xs font-mono-code uppercase tracking-wider text-stone-400 mb-2 px-1">
                 <span>Instant City Teleport (24h Cigs/Day):</span>
-                <button
-                  type="button"
-                  onClick={() => switchTab('compare')}
-                  className="text-amber-400 hover:underline cursor-pointer"
+                <a
+                  href={hrefForTab('compare')}
+                  onClick={tabLinkHandler('compare')}
+                  className="text-amber-400 hover:underline cursor-pointer inline-flex items-center min-h-11"
                 >
                   Compare All Cities →
-                </button>
+                </a>
               </div>
               <div className="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar">
                 {benchmarks.slice(0, 7).map((b) => {
@@ -782,6 +872,8 @@ export function App() {
                       key={b.id}
                       type="button"
                       onClick={() => handleSelectBenchmarkAsPrimary(b)}
+                      aria-current={isCurrent ? 'true' : undefined}
+                      aria-label={`${b.city}: ${(b.livePm25 / 22).toFixed(1)} cigarettes per day${isCurrent ? ' (current city)' : ''}`}
                       className={`px-3 py-1.5 rounded-xl font-mono-code text-xs shrink-0 border transition-colors cursor-pointer ${
                         isCurrent
                           ? 'bg-amber-500 text-stone-950 border-amber-400 font-bold'
@@ -872,17 +964,17 @@ export function App() {
       {/* STICKY MOBILE-FIRST 4-TAB BOTTOM NAVIGATION BAR */}
       <nav
         aria-label="Main navigation"
-        className="bottom-nav fixed bottom-0 inset-x-0 z-40 backdrop-blur-2xl bg-[#0B0A09]/92 border-t border-stone-800/90"
+        className="bottom-nav fixed bottom-0 inset-x-0 z-40 backdrop-blur-2xl bg-surface/92 border-t border-stone-800/90"
       >
         <div className="max-w-lg mx-auto px-2 py-1.5 grid grid-cols-4 gap-1">
           {NAV_ITEMS.map(({ id, label, Icon }) => {
             const isActive = activeTab === id;
             return (
-              <button
+              <a
                 key={id}
-                type="button"
+                href={hrefForTab(id)}
                 aria-current={isActive ? 'page' : undefined}
-                onClick={() => switchTab(id)}
+                onClick={tabLinkHandler(id)}
                 className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
                   isActive
                     ? 'bg-amber-500/15 text-amber-300 border border-amber-500/35'
@@ -893,7 +985,7 @@ export function App() {
                 <span className="text-xs font-mono-code font-semibold tracking-tight">
                   {label}
                 </span>
-              </button>
+              </a>
             );
           })}
         </div>

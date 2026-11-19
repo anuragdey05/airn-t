@@ -6,19 +6,19 @@ export const AcademicCitationsSection: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>('pope-2009');
 
   return (
-    <div className="rounded-2xl border border-stone-800/90 bg-[#12100E]/95 p-5 sm:p-6 shadow-2xl">
+    <div className="rounded-2xl border border-stone-800/90 bg-panel/95 p-5 sm:p-6 shadow-2xl">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-stone-800/80">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono-code uppercase tracking-widest text-amber-400">
             <BookOpen className="w-3.5 h-3.5" />
             <span>Peer-Reviewed Literature &amp; Econometric Foundations</span>
           </div>
-          <h3 className="text-xl font-serif-editorial text-stone-100 mt-0.5">
+          <h2 className="font-serif-editorial text-stone-100 mt-0.5">
             Research Papers Backing the AQI-to-Cigarette &amp; Marginal Utility Engine
-          </h3>
+          </h2>
         </div>
         <span className="text-xs font-mono-code text-stone-400">
-          4 Foundational Papers
+          {ACADEMIC_CITATIONS.length} Foundational Papers
         </span>
       </div>
 
@@ -65,7 +65,7 @@ export const AcademicCitationsSection: React.FC = () => {
                     {paper.formulaSummary}
                   </div>
                   <p className="text-stone-300 leading-relaxed">
-                    <strong className="text-stone-100">How We Use It: </strong>
+                    <strong className="text-stone-100">How airn’t Uses It: </strong>
                     {paper.applicationInApp}
                   </p>
                   <div className="pt-1">

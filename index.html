@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- Primary SEO -->
-    <title>airn't — How Many Cigarettes Is Your Air? Live AQI to Cigarettes Calculator</title>
-    <meta name="description" content="airn't converts the live air quality (AQI / PM2.5) where you are into the number of cigarettes you're passively smoking today, using the Berkeley Earth rule: 22 µg/m³ of PM2.5 ≈ 1 cigarette per day. Check any city worldwide." />
+    <title>airn’t — How Many Cigarettes Is Your Air? Live AQI to Cigarettes Calculator</title>
+    <meta name="description" content="airn’t converts the live air quality (AQI / PM2.5) where you are into the number of cigarettes you’re passively smoking today, using the Berkeley Earth rule: 22 µg/m³ of PM2.5 ≈ 1 cigarette per day. Check any city worldwide." />
     <meta name="keywords" content="AQI to cigarettes, PM2.5 cigarette equivalent, how many cigarettes is air pollution, air quality cigarettes calculator, Berkeley Earth 22 µg/m³, Delhi AQI cigarettes, air pollution calculator" />
-    <meta name="author" content="airn't" />
+    <meta name="author" content="airn’t" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#0B0A09" />
     <meta name="color-scheme" content="dark" />
@@ -19,24 +19,24 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="apple-mobile-web-app-title" content="airn't" />
-    <meta name="application-name" content="airn't" />
+    <meta name="apple-mobile-web-app-title" content="airn’t" />
+    <meta name="application-name" content="airn’t" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="airn't" />
-    <meta property="og:title" content="airn't — How many cigarettes is the air you're breathing?" />
+    <meta property="og:site_name" content="airn’t" />
+    <meta property="og:title" content="airn’t — How many cigarettes is the air you’re breathing?" />
     <meta property="og:description" content="Live AQI → cigarettes per day, for anywhere on Earth. Plus a tongue-in-cheek behavioural-economics verdict on whether you might as well light up." />
     <meta property="og:url" content="https://airn-t.vercel.app/" />
     <meta property="og:image" content="https://airn-t.vercel.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="airn't logo — serif wordmark above a lit cigarette with rising smoke" />
+    <meta property="og:image:alt" content="airn’t logo — serif wordmark above a lit cigarette with rising smoke" />
     <meta property="og:locale" content="en_US" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="airn't — How many cigarettes is your air?" />
+    <meta name="twitter:title" content="airn’t — How many cigarettes is your air?" />
     <meta name="twitter:description" content="Live AQI → cigarettes per day, anywhere on Earth." />
     <meta name="twitter:image" content="https://airn-t.vercel.app/og-image.png" />
 
@@ -110,19 +110,20 @@
     }
     </script>
 
+    <link rel="preload" href="/fonts/Ultra-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://air-quality-api.open-meteo.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-[#0B0A09] text-[#F2EDE4] antialiased selection:bg-amber-500/30 selection:text-amber-200">
+  <body style="background:#0B0A09" class="bg-[#0B0A09] text-[#F2EDE4] antialiased selection:bg-amber-500/30 selection:text-amber-200">
     <div id="root">
       <!-- Crawlable fallback content (replaced by React on load). Helps search engines and AI answer engines. -->
-      <main style="max-width:680px;margin:0 auto;padding:24px;font-family:sans-serif;color:#F2EDE4">
+      <main style="max-width:680px;margin:0 auto;padding:24px;font-family:sans-serif;color:#F2EDE4;background:#0B0A09">
         <img src="/logo.svg" alt="airn't logo" width="240" height="140" />
-        <h1>airn't — how many cigarettes is the air you're breathing?</h1>
+        <h1 style="font-size:32px;line-height:1.2">airn’t — how many cigarettes is the air you’re breathing?</h1>
         <p>airn't turns the live air quality index (AQI / PM2.5) where you are into the number of cigarettes you are passively smoking today. The conversion follows Berkeley Earth: <strong>22 µg/m³ of PM2.5 ≈ 1 cigarette per day</strong>.</p>
-        <h2>Quick reference: AQI to cigarettes per day</h2>
+        <h2 style="font-size:22px">Quick reference: AQI to cigarettes per day</h2>
         <table>
           <thead><tr><th>US AQI</th><th>PM2.5 (µg/m³)</th><th>Cigarettes/day</th></tr></thead>
           <tbody>
@@ -134,12 +135,12 @@
             <tr><td>400</td><td>350</td><td>15.9</td></tr>
           </tbody>
         </table>
-        <h2>Features</h2>
+        <h2 style="font-size:22px">Features</h2>
         <ul>
           <li>Live AQI → cigarettes per day for your GPS location or any city worldwide</li>
           <li>City-vs-city comparison and a global leaderboard</li>
           <li>7-day history, 3-day forecast, and yearly pack equivalents</li>
-          <li>A satirical "should you light up?" verdict based on Pope et al. (2009) and Becker &amp; Murphy (1988)</li>
+          <li>A satirical “should you light up?” verdict based on Pope et al. (2009) and Becker &amp; Murphy (1988)</li>
         </ul>
         <noscript><p>Enable JavaScript to see live air quality for your location.</p></noscript>
       </main>

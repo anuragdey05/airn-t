@@ -1,5 +1,9 @@
 import { pm25ToUsAqi, usAqiToPm25 } from './economics';
 
+/** Short weekday name for a UTC date, via Intl (e.g. "Mon"). */
+const weekdayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' });
+const weekdayLabel = (date: Date) => weekdayFormatter.format(date);
+
 export interface DailyExposurePoint {
   date: string; // YYYY-MM-DD
   label: string; // e.g., "Mon", "Today"
@@ -323,7 +327,6 @@ export async function searchCitiesWorldwide(query: string, reportErrors = false)
 }
 
 function buildFallbackTimeline(basePm25: number, utcOffsetSeconds?: number): DailyExposurePoint[] {
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const { todayIso } = getLocalIsoDateAndHour(utcOffsetSeconds);
   const baseDate = new Date(todayIso + 'T12:00:00Z');
   const points: DailyExposurePoint[] = [];
@@ -336,7 +339,7 @@ function buildFallbackTimeline(basePm25: number, utcOffsetSeconds?: number): Dai
     const pm = Number(Math.max(1.5, basePm25 * mult).toFixed(1));
     points.push({
       date: iso,
-      label: offset === 0 ? 'Today' : days[d.getUTCDay()],
+      label: offset === 0 ? 'Today' : weekdayLabel(d),
       pm25Avg: pm,
       usAqiAvg: pm25ToUsAqi(pm),
       cigsPerDay: Number((pm / 22).toFixed(2)),
@@ -445,7 +448,6 @@ export async function fetchAirQualityForCoords(params: {
           }
         });
 
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const computedTimeline: DailyExposurePoint[] = [];
 
         Array.from(byDate.entries())
@@ -459,7 +461,7 @@ export async function fetchAirQualityForCoords(params: {
             const isToday = dateStr === todayIso;
             computedTimeline.push({
               date: dateStr,
-              label: isToday ? 'Today' : dayNames[dt.getUTCDay()],
+              label: isToday ? 'Today' : weekdayLabel(dt),
               pm25Avg: pmAvg,
               usAqiAvg: pm25ToUsAqi(pmAvg),
               cigsPerDay: Number((pmAvg / 22).toFixed(2)),

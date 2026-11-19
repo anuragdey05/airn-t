@@ -1,5 +1,6 @@
 import { CityAirQualityData } from './aqiService';
 import { EconomicBreakdown, getAqiSeverity } from './economics';
+import { formatUsd } from './format';
 
 export type ShareCardFormat = 'story' | 'landscape';
 
@@ -37,6 +38,18 @@ export function drawShareCardToCanvas(
 
   const sev = getAqiSeverity(economics.usAqi);
   const cigs = economics.effectiveCigsPerDay;
+  const edge = isStory ? 64 : 42;
+
+  // Draw text, truncating with an ellipsis if it would run past the card frame (long city names).
+  const fitText = (text: string, x: number, y: number) => {
+    const max = W - x - edge - 16;
+    let out = text;
+    if (typeof ctx.measureText === 'function' && ctx.measureText(out).width > max) {
+      while (out.length > 1 && ctx.measureText(`${out}…`).width > max) out = out.slice(0, -1);
+      out = `${out.trimEnd()}…`;
+    }
+    ctx.fillText(out, x, y);
+  };
 
   // 1. Deep Atmospheric Background
   ctx.fillStyle = '#0B0A09';
@@ -67,33 +80,33 @@ export function drawShareCardToCanvas(
     // Header brand & location
     ctx.fillStyle = '#F59E0B';
     ctx.font = '700 28px "JetBrains Mono", monospace';
-    ctx.fillText("airn't // ATMOSPHERIC TAR REPORT", pad + 44, pad + 72);
+    fitText("airn’t // ATMOSPHERIC TAR REPORT", pad + 44, pad + 72);
 
     ctx.fillStyle = '#A8A29E';
     ctx.font = '500 24px "JetBrains Mono", monospace';
     const locLabel = `${cityData.city.toUpperCase()}${
       cityData.country ? ' · ' + cityData.country.toUpperCase() : ''
     } · 24H AVG`;
-    ctx.fillText(locLabel, pad + 44, pad + 114);
+    fitText(locLabel, pad + 44, pad + 114);
 
     // Big Hero Statement: "My air already smokes X.X cigarettes a day"
     ctx.fillStyle = '#F2EDE4';
     ctx.font = '400 68px "Instrument Serif", Georgia, serif';
-    ctx.fillText('My air already smokes', pad + 44, pad + 230);
+    fitText('My air already smokes', pad + 44, pad + 230);
 
     // Giant Cigarette Count
     ctx.fillStyle = sev.colorHex;
     ctx.font = '800 186px "JetBrains Mono", monospace';
     const cigStr = cigs.toFixed(1);
-    ctx.fillText(cigStr, pad + 44, pad + 420);
+    fitText(cigStr, pad + 44, pad + 420);
 
     const cigWidth = ctx.measureText(cigStr).width;
     ctx.fillStyle = '#F2EDE4';
     ctx.font = '600 46px "Space Grotesk", sans-serif';
-    ctx.fillText('cigarettes', pad + 44 + cigWidth + 28, pad + 355);
+    fitText('cigarettes', pad + 44 + cigWidth + 28, pad + 355);
     ctx.fillStyle = '#F59E0B';
     ctx.font = '500 38px "JetBrains Mono", monospace';
-    ctx.fillText('per day', pad + 44 + cigWidth + 28, pad + 408);
+    fitText('per day', pad + 44 + cigWidth + 28, pad + 408);
 
     // Sub-caption
     ctx.fillStyle = '#D6D3D1';
@@ -102,7 +115,7 @@ export function drawShareCardToCanvas(
       cigs >= 0.05
         ? `Inhaling 1 passive cigarette every ${(24 / cigs).toFixed(1)} hours in ${cityData.city}.`
         : `Breathing clean alpine-grade air today in ${cityData.city}.`;
-    ctx.fillText(freqText, pad + 44, pad + 490);
+    fitText(freqText, pad + 44, pad + 490);
 
     // Visual 20-Cigarette Pack Tray Illustration (Centerpiece)
     const trayX = pad + 44;
@@ -162,11 +175,11 @@ export function drawShareCardToCanvas(
 
     ctx.fillStyle = '#F2EDE4';
     ctx.font = '400 48px "Instrument Serif", Georgia, serif';
-    ctx.fillText(`airn't · ${cityData.city}`, trayX + 44, trayY + 415);
+    fitText(`airn’t · ${cityData.city}`, trayX + 44, trayY + 415);
 
     ctx.fillStyle = '#A8A29E';
     ctx.font = '500 24px "JetBrains Mono", monospace';
-    ctx.fillText(
+    fitText(
       `20 CLASS A PARTICULATE EQUIVALENTS · ${hoursOutdoors}H OUTDOOR PROFILE`,
       trayX + 44,
       trayY + 465
@@ -188,7 +201,7 @@ export function drawShareCardToCanvas(
       {
         label: 'ANNUAL HABIT',
         val: `${economics.packsPerYear.toFixed(1)}`,
-        sub: `packs/yr ($${(economics.packsPerYear * packPriceUsd).toFixed(0)})`,
+        sub: `packs/yr (${formatUsd(economics.packsPerYear * packPriceUsd)})`,
         color: '#F59E0B',
       },
       {
@@ -211,15 +224,15 @@ export function drawShareCardToCanvas(
 
       ctx.fillStyle = '#A8A29E';
       ctx.font = '600 20px "JetBrains Mono", monospace';
-      ctx.fillText(m.label, bx + 24, boxY + 46);
+      fitText(m.label, bx + 24, boxY + 46);
 
       ctx.fillStyle = m.color;
       ctx.font = '700 48px "JetBrains Mono", monospace';
-      ctx.fillText(m.val, bx + 24, boxY + 112);
+      fitText(m.val, bx + 24, boxY + 112);
 
       ctx.fillStyle = '#D6D3D1';
       ctx.font = '400 22px "Space Grotesk", sans-serif';
-      ctx.fillText(m.sub, bx + 24, boxY + 154);
+      fitText(m.sub, bx + 24, boxY + 154);
     });
 
     // Surgeon General / Berkeley Earth Warning Box
@@ -231,15 +244,15 @@ export function drawShareCardToCanvas(
 
     ctx.fillStyle = '#0B0A09';
     ctx.font = '700 20px "JetBrains Mono", monospace';
-    ctx.fillText(
+    fitText(
       'ATMOSPHERIC WARNING · BERKELEY EARTH (22 µg/m³ PM2.5 = 1 CIG/DAY)',
       trayX + 28,
       warnY + 48
     );
 
     ctx.font = '500 22px "Space Grotesk", sans-serif';
-    ctx.fillText(
-      `Breathing ${cityData.city}'s air equals ${(cigs * 7).toFixed(
+    fitText(
+      `Breathing ${cityData.city}’s air equals ${(cigs * 7).toFixed(
         1
       )} cigarettes/week (${economics.packsPerYear.toFixed(1)} packs/year).`,
       trayX + 28,
@@ -247,8 +260,8 @@ export function drawShareCardToCanvas(
     );
     ctx.fillStyle = '#44403C';
     ctx.font = '500 20px "JetBrains Mono", monospace';
-    ctx.fillText(
-      `Check your city → airn-t.vercel.app/?city=${encodeURIComponent(cityData.city)}`,
+    fitText(
+      `Check your city → airn-t.vercel.app/?city=${cityData.city}`,
       trayX + 28,
       warnY + 142
     );
@@ -257,29 +270,29 @@ export function drawShareCardToCanvas(
     const leftX = pad + 38;
     ctx.fillStyle = '#F59E0B';
     ctx.font = '700 20px "JetBrains Mono", monospace';
-    ctx.fillText(
-      `airn't // ${cityData.city.toUpperCase()} · 24H AVG AQI ${economics.usAqi}`,
+    fitText(
+      `airn’t // ${cityData.city.toUpperCase()} · 24H AVG AQI ${economics.usAqi}`,
       leftX,
       pad + 54
     );
 
     ctx.fillStyle = '#F2EDE4';
     ctx.font = '400 48px "Instrument Serif", Georgia, serif';
-    ctx.fillText('My air already smokes', leftX, pad + 124);
+    fitText('My air already smokes', leftX, pad + 124);
 
     ctx.fillStyle = sev.colorHex;
     ctx.font = '800 132px "JetBrains Mono", monospace';
     const cigStr = cigs.toFixed(1);
-    ctx.fillText(cigStr, leftX, pad + 260);
+    fitText(cigStr, leftX, pad + 260);
     const cw = ctx.measureText(cigStr).width;
 
     ctx.fillStyle = '#F2EDE4';
     ctx.font = '600 36px "Space Grotesk", sans-serif';
-    ctx.fillText('cigarettes / day', leftX + cw + 24, pad + 235);
+    fitText('cigarettes / day', leftX + cw + 24, pad + 235);
 
     ctx.fillStyle = '#D6D3D1';
     ctx.font = '400 24px "Space Grotesk", sans-serif';
-    ctx.fillText(
+    fitText(
       `24h PM2.5: ${cityData.pm25.toFixed(1)} µg/m³ · ${economics.packsPerYear.toFixed(
         1
       )} packs/year · -${economics.marginalDamageDiscountPct.toFixed(0)}% slope discount`,
@@ -308,8 +321,8 @@ export function drawShareCardToCanvas(
 
     ctx.fillStyle = '#F59E0B';
     ctx.font = '600 22px "JetBrains Mono", monospace';
-    ctx.fillText(
-      `Check your city at airn-t.vercel.app/?city=${encodeURIComponent(cityData.city)}`,
+    fitText(
+      `Check your city at airn-t.vercel.app/?city=${cityData.city}`,
       leftX,
       H - pad - 28
     );
@@ -331,13 +344,35 @@ export async function renderShareCardBlob(
   });
 }
 
+/**
+ * Outcome of a share attempt, reported truthfully so the UI never claims a share or copy
+ * that did not happen.
+ */
+export type ShareOutcome =
+  | 'shared'
+  | 'cancelled'
+  | 'downloaded-and-copied'
+  | 'downloaded'
+  | 'copied'
+  | 'failed';
+
+async function tryCopy(text: string): Promise<boolean> {
+  try {
+    if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return false;
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function shareOrDownloadCard(
   options: ShareCardOptions
-): Promise<'shared' | 'downloaded' | 'copied'> {
+): Promise<ShareOutcome> {
   const { cityData, economics } = options;
   const shareUrl = buildCityShareUrl(cityData.city);
   const cigs = economics.effectiveCigsPerDay.toFixed(1);
-  const shareTitle = `airn't — ${cityData.city}: ${cigs} cigarettes/day`;
+  const shareTitle = `airn’t — ${cityData.city}: ${cigs} cigarettes/day`;
   const shareText = `My air in ${cityData.city} already smokes ${cigs} cigarettes a day (24h PM2.5: ${cityData.pm25.toFixed(
     1
   )} µg/m³, AQI ${economics.usAqi}). Check yours:`;
@@ -359,7 +394,7 @@ export async function shareOrDownloadCard(
       }
     } catch (err) {
       if ((err as Error)?.name === 'AbortError') {
-        return 'shared';
+        return 'cancelled';
       }
       // Fall through to download
     }
@@ -374,14 +409,8 @@ export async function shareOrDownloadCard(
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
-    try {
-      await navigator.clipboard?.writeText(`${shareText} ${shareUrl}`);
-    } catch {
-      // ignore clipboard error
-    }
-    return 'downloaded';
+    return (await tryCopy(`${shareText} ${shareUrl}`)) ? 'downloaded-and-copied' : 'downloaded';
   }
 
-  await navigator.clipboard?.writeText(`${shareText} ${shareUrl}`);
-  return 'copied';
+  return (await tryCopy(`${shareText} ${shareUrl}`)) ? 'copied' : 'failed';
 }

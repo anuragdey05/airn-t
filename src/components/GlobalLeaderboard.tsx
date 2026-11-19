@@ -31,16 +31,16 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
   const ranked = [...benchmarks].sort((a, b) => b.livePm25 - a.livePm25);
 
   return (
-    <div className="rounded-2xl border border-stone-800/90 bg-[#12100E]/95 p-4 sm:p-6 shadow-2xl">
+    <div className="rounded-2xl border border-stone-800/90 bg-panel/95 p-4 sm:p-6 shadow-2xl">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-stone-800/80">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono-code uppercase tracking-widest text-amber-400">
             <Globe className="w-3.5 h-3.5" />
-            <span>Global Smokers&apos; Lounge // Live World Index</span>
+            <span>Global Smokers’ Lounge // Live World Index</span>
           </div>
-          <h3 className="text-lg sm:text-xl font-serif-editorial text-stone-100 mt-0.5">
-            Cities Ranked by Passive Cigarettes &amp; Smoke Propensity
-          </h3>
+          <h2 className="font-serif-editorial text-stone-100 mt-0.5">
+            Cities Ranked by Passive Cigarettes &amp; Temptation Index
+          </h2>
         </div>
       </div>
 
@@ -61,6 +61,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
           return (
             <div
               key={item.id}
+              aria-current={isCurrent ? 'true' : undefined}
               className={`p-3.5 rounded-2xl border transition-colors ${
                 isCurrent
                   ? 'bg-amber-500/10 border-amber-500/40'
@@ -105,7 +106,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span className="text-xs text-stone-400 block uppercase">Smoke %</span>
+                  <span className="text-xs text-stone-400 block uppercase">Temptation</span>
                   <span className="text-sm font-bold text-rose-300">
                     {econ.smokingPropensityPct}%
                   </span>
@@ -116,6 +117,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                 <button
                   type="button"
                   onClick={() => onSelectAsPrimary(item)}
+                  aria-label={`Load ${item.city} pack`}
                   className="flex-1 py-1.5 rounded-xl bg-stone-900 hover:bg-amber-500/20 text-stone-200 border border-stone-800 font-mono-code text-xs flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <span>Load Pack</span>
@@ -124,6 +126,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                 <button
                   type="button"
                   onClick={() => onSelectAsChallenger(item)}
+                  aria-label={`Duel ${item.city} against your city`}
                   className="flex-1 py-1.5 rounded-xl bg-stone-900 hover:bg-sky-500/20 text-sky-300 border border-stone-800 font-mono-code text-xs flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <Swords className="w-3 h-3" />
@@ -146,7 +149,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
               <th className="py-2.5 px-3">PM2.5 (µg/m³)</th>
               <th className="py-2.5 px-3">Passive Cigs / Day</th>
               <th className="py-2.5 px-3">Marginal Harm Discount</th>
-              <th className="py-2.5 px-3">Smoke Propensity</th>
+              <th className="py-2.5 px-3">Temptation Index</th>
               <th className="py-2.5 px-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -166,6 +169,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
               return (
                 <tr
                   key={item.id}
+                  aria-current={isCurrent ? 'true' : undefined}
                   className={`transition-colors ${
                     isCurrent
                       ? 'bg-amber-500/10 hover:bg-amber-500/15'
@@ -226,7 +230,8 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                       <button
                         type="button"
                         onClick={() => onSelectAsPrimary(item)}
-                        className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-amber-500/20 text-stone-300 hover:text-amber-300 border border-stone-800 hover:border-amber-500/40 font-mono-code text-xs inline-flex items-center gap-1 transition-colors cursor-pointer"
+                        aria-label={`Load ${item.city} pack`}
+                        className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-amber-500/20 text-stone-300 hover:text-amber-300 border border-stone-800 hover:border-amber-500/40 font-mono-code text-xs inline-flex items-center gap-1 whitespace-nowrap transition-colors cursor-pointer"
                       >
                         <span>Load Pack</span>
                         <ArrowUpRight className="w-3 h-3" />
@@ -234,7 +239,8 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                       <button
                         type="button"
                         onClick={() => onSelectAsChallenger(item)}
-                        className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-sky-500/20 text-stone-300 hover:text-sky-300 border border-stone-800 hover:border-sky-500/40 font-mono-code text-xs inline-flex items-center gap-1 transition-colors cursor-pointer"
+                        aria-label={`Duel ${item.city} against your city`}
+                        className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-sky-500/20 text-stone-300 hover:text-sky-300 border border-stone-800 hover:border-sky-500/40 font-mono-code text-xs inline-flex items-center gap-1 whitespace-nowrap transition-colors cursor-pointer"
                       >
                         <Swords className="w-3 h-3" />
                         <span>Duel</span>

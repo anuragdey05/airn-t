@@ -13,6 +13,8 @@ import {
   getAqiSeverity,
 } from '../lib/economics';
 import { ArrowLeftRight, Search, MapPin, Sparkles, Loader2 } from 'lucide-react';
+import { CitySearchResults, onCitySearchKeyDown } from './CitySearchResults';
+import { formatUsd } from '../lib/format';
 
 interface CityDuelComparisonProps {
   beginChallengerRequest: () => number;
@@ -47,6 +49,7 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
   const { query: searchQuery, results: searchResults, loading: isSearching } = search;
   const handleSearchChange = search.change;
   const requestId = useRef(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [loadError, setLoadError] = useState('');
   useEffect(() => () => { requestId.current++; }, []);
   useEffect(() => { requestId.current++; setIsLoadingChallenger(false); }, [challengerCity]);
@@ -129,16 +132,16 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
   const challengerSev = getAqiSeverity(challengerEcon.usAqi);
 
   return (
-    <div className="rounded-2xl border border-stone-800/90 bg-[#12100E]/95 p-5 sm:p-6 shadow-2xl">
+    <div className="rounded-2xl border border-stone-800/90 bg-panel/95 p-5 sm:p-6 shadow-2xl">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 mb-5 border-b border-stone-800/80">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono-code uppercase tracking-widest text-amber-400">
             <ArrowLeftRight className="w-3.5 h-3.5" />
             <span>Atmospheric Arbitrage // City-to-City Duel</span>
           </div>
-          <h3 className="text-xl font-serif-editorial text-stone-100 mt-0.5">
+          <h2 className="font-serif-editorial text-stone-100 mt-0.5">
             Relocation &amp; Travel Cigarette Delta Calculator
-          </h3>
+          </h2>
         </div>
 
         {/* Search any challenger city worldwide */}
@@ -146,46 +149,44 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
           <div className="relative flex items-center">
             <Search className="w-4 h-4 text-stone-400 absolute left-3.5 pointer-events-none" />
             <input
-              type="text"
+              ref={searchInputRef}
+              type="search"
+              name="compare-city-search"
+              autoComplete="off"
+              spellCheck={false}
               aria-label="Search comparison city"
+              aria-controls="duel-search-results"
+              aria-expanded={searchResults.length > 0}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Compare with any city on Earth (e.g., Tokyo, Cairo, Austin)..."
+              onKeyDown={(e) => onCitySearchKeyDown(e, 'duel-search-results', () => search.change(''))}
+              placeholder="Compare with any city on Earth (e.g., Tokyo, Cairo, Austin)…"
               className="w-full pl-9 pr-9 py-2 rounded-xl bg-stone-950 border border-stone-800 text-xs text-stone-100 placeholder:text-stone-400 focus:outline-none focus:border-amber-500/60"
             />
             {(isSearching || isLoadingChallenger) && (
               <Loader2 className="w-4 h-4 text-amber-400 animate-spin absolute right-3" />
             )}
+            <span className="sr-only" role="status" aria-live="polite">
+              {isLoadingChallenger ? 'Loading comparison city…' : ''}
+            </span>
           </div>
 
           {(search.message || loadError) && <p role="status" className="search-message">{search.message || loadError}</p>}
-          {searchResults.length > 0 && (
-            <div className="absolute z-30 left-0 right-0 mt-1.5 rounded-xl bg-stone-950 border border-stone-700 shadow-2xl overflow-hidden max-h-64 overflow-y-auto">
-              {searchResults.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => handlePickGeoResult(r)}
-                  className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-stone-900 flex items-center justify-between border-b border-stone-900 last:border-0 cursor-pointer"
-                >
-                  <div>
-                    <span className="font-medium text-stone-100">{r.name}</span>
-                    {r.admin1 && <span className="text-stone-400">, {r.admin1}</span>}
-                    <span className="text-stone-400"> — {r.country}</span>
-                  </div>
-                  <span className="font-mono-code text-xs text-amber-400 uppercase">
-                    Compare →
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+          <CitySearchResults
+            id="duel-search-results"
+            results={searchResults}
+            onSelect={handlePickGeoResult}
+            actionLabel="Compare"
+            inputRef={searchInputRef}
+            onEscape={() => search.change('')}
+            className="absolute z-30 left-0 right-0 mt-1.5 rounded-xl bg-stone-950 border border-stone-700 shadow-2xl overflow-hidden max-h-64 overflow-y-auto"
+          />
         </div>
       </div>
 
       {/* Quick preset pills */}
-      <div className="flex items-center gap-1.5 flex-wrap mb-5">
-        <span className="text-xs font-mono-code uppercase text-stone-400 mr-1">
+      <div role="group" aria-labelledby="quick-duel-label" className="flex items-center gap-1.5 flex-wrap mb-5">
+        <span id="quick-duel-label" className="text-xs font-mono-code uppercase text-stone-400 mr-1">
           Quick Duel:
         </span>
         {GLOBAL_BENCHMARK_CITIES.slice(0, 8).map((c) => {
@@ -196,6 +197,7 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
               key={c.id}
               type="button"
               onClick={() => handleQuickBenchmark(c.id)}
+              aria-pressed={isSelected}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono-code transition-colors border cursor-pointer ${
                 isSelected
                   ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
@@ -221,9 +223,9 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
                 US AQI {primaryEcon.usAqi}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-lg font-semibold text-stone-100">
+            <div className="flex flex-wrap items-center gap-1.5 text-lg font-semibold text-stone-100">
               <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>{primaryCity.city}</span>
+              <span className="min-w-0 break-words">{primaryCity.city}</span>
               {primaryCity.country && (
                 <span className="text-xs font-normal text-stone-400">
                   ({primaryCity.country})
@@ -249,7 +251,7 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
             </div>
             <div>
               <div className="text-xs font-mono-code uppercase text-stone-400">
-                Smoking Propensity
+                Temptation Index
               </div>
               <div className="text-2xl font-mono-code font-bold text-rose-300 mt-0.5">
                 {primaryEcon.smokingPropensityPct}%
@@ -266,12 +268,13 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
           <button
             type="button"
             onClick={() => { requestId.current++; setIsLoadingChallenger(false); onSwapPrimaryWithChallenger(); }}
-            title="Swap Primary & Challenger Cities"
+            aria-label={`Swap ${primaryCity.city} and ${challengerCity.city}`}
+            title="Swap cities"
             className="p-2.5 rounded-full bg-stone-900 border border-stone-700 hover:border-amber-400 text-amber-300 hover:scale-105 transition-colors cursor-pointer shadow-lg"
           >
             <ArrowLeftRight className="w-4 h-4" />
           </button>
-          <span className="text-xs font-mono-code text-stone-400 mt-1 uppercase">
+          <span aria-hidden="true" className="text-xs font-mono-code text-stone-400 mt-1 uppercase">
             Swap
           </span>
         </div>
@@ -287,9 +290,9 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
                 US AQI {challengerEcon.usAqi}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-lg font-semibold text-stone-100">
+            <div className="flex flex-wrap items-center gap-1.5 text-lg font-semibold text-stone-100">
               <MapPin className="w-4 h-4 text-sky-400 shrink-0" />
-              <span>{challengerCity.city}</span>
+              <span className="min-w-0 break-words">{challengerCity.city}</span>
               {challengerCity.country && (
                 <span className="text-xs font-normal text-stone-400">
                   ({challengerCity.country})
@@ -315,7 +318,7 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
             </div>
             <div>
               <div className="text-xs font-mono-code uppercase text-stone-400">
-                Smoking Propensity
+                Temptation Index
               </div>
               <div className="text-2xl font-mono-code font-bold text-rose-300 mt-0.5">
                 {challengerEcon.smokingPropensityPct}%
@@ -346,10 +349,10 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
                   {Math.abs(dailyDeltaCigs).toFixed(2)} passive cigarettes/day
                 </strong>{' '}
                 (<strong className="font-mono-code">{Math.abs(annualDeltaPacks).toFixed(1)} packs/year</strong>, worth{' '}
-                <strong className="font-mono-code">${Math.abs(annualDeltaDollars).toFixed(0)}/yr</strong>), while{' '}
-                <strong>reducing</strong> your marginal justification to light a real cigarette by{' '}
+                <strong className="font-mono-code">{formatUsd(Math.abs(annualDeltaDollars))}/yr</strong>), while{' '}
+                <strong>lowering</strong> your illustrative Temptation Index by{' '}
                 <strong className="font-mono-code text-emerald-300">
-                  {Math.abs(propensityDelta)}%
+                  {Math.abs(propensityDelta)} points
                 </strong>.
               </span>
             ) : (
@@ -360,9 +363,9 @@ export const CityDuelComparison: React.FC<CityDuelComparisonProps> = ({
                   +{dailyDeltaCigs.toFixed(2)} extra passive cigarettes/day
                 </strong>{' '}
                 (<strong className="font-mono-code">+{annualDeltaPacks.toFixed(1)} packs/year</strong>, equivalent to{' '}
-                <strong className="font-mono-code">${annualDeltaDollars.toFixed(0)}/yr</strong> in street value) and{' '}
-                <strong>increases</strong> your marginal propensity to smoke by{' '}
-                <strong className="font-mono-code text-rose-300">+{propensityDelta}%</strong>.
+                <strong className="font-mono-code">{formatUsd(annualDeltaDollars)}/yr</strong> in street value) and{' '}
+                <strong>raises</strong> your illustrative Temptation Index by{' '}
+                <strong className="font-mono-code text-rose-300">+{propensityDelta} points</strong>.
               </span>
             )}
           </div>

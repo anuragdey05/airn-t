@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Colour tokens — the app's dark surfaces and paper tones, previously scattered as hex literals. */
+@theme {
+  --color-surface: #0B0A09;      /* page background */
+  --color-panel: #12100E;        /* cards and sheets */
+  --color-panel-raised: #15120E; /* tinted mid-stop in verdict gradients */
+  --color-paper: #F2EDE4;        /* primary text on dark */
+  --color-receipt: #F4EFE6;      /* light receipt card */
+}
+
 @layer base {
   :root {
     --font-serif: 'Instrument Serif', Georgia, serif;
@@ -14,6 +23,12 @@
     --ease-arrive: cubic-bezier(.16, 1, .3, 1);
     color-scheme: dark;
     scrollbar-color: #78716c #171412;
+  }
+
+  html {
+    /* Keep focused elements clear of the sticky header and the fixed bottom nav. */
+    scroll-padding-top: calc(72px + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom));
   }
 
   body {
@@ -110,33 +125,72 @@ input[type="range"].noir-slider::-moz-range-thumb {
   background: #f59e0b;
 }
 
-/* Shared interface rhythm & accessibility controls */
-button, input, select, a {
-  -webkit-tap-highlight-color: #f59e0b22;
+/* Shared interface rhythm & accessibility controls.
+   Element defaults live in @layer base so Tailwind utilities written on a component win. */
+@layer base {
+  button, input, select, a {
+    -webkit-tap-highlight-color: #f59e0b22;
+    touch-action: manipulation;
+  }
+
+  button {
+    min-height: var(--control-height);
+    transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+    transition-duration: var(--motion-feedback);
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: .6;
+  }
+
+  button[aria-busy=true] {
+    cursor: progress;
+  }
+
+  button:active:not(:disabled) {
+    filter: brightness(1.12);
+  }
+
+  button:has(> svg:only-child) {
+    min-width: var(--control-height);
+  }
+
+  input:not([type=range]) {
+    min-height: var(--control-height);
+    caret-color: #fbbf24;
+  }
+
+  a {
+    text-underline-offset: 4px;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+    line-height: 1.25;
+  }
+
+  :is(h2, h3).font-serif-editorial {
+    font-size: clamp(1.35rem, 2.2vw, 1.875rem);
+    margin-top: 6px;
+  }
+
+  p {
+    font-size: 14px;
+    line-height: 1.65;
+  }
 }
 
-button {
-  min-height: var(--control-height);
-  transition-duration: var(--motion-feedback);
-}
-
-button:disabled {
-  cursor: wait;
-  opacity: .6;
-}
-
-button:active:not(:disabled) {
-  filter: brightness(1.12);
-}
-
-button:has(> svg:only-child) {
-  min-width: var(--control-height);
-}
-
+/* Text inputs: 16px on phones so iOS Safari doesn't zoom on focus; 14px from sm up.
+   Unlayered on purpose — it must beat the text-xs utility on the search fields. */
 input:not([type=range]) {
-  min-height: var(--control-height);
-  font-size: 14px;
-  caret-color: #fbbf24;
+  font-size: 16px;
+}
+
+@media (min-width: 640px) {
+  input:not([type=range]) {
+    font-size: 14px;
+  }
 }
 
 :focus-visible {
@@ -144,23 +198,9 @@ input:not([type=range]) {
   outline-offset: 4px;
 }
 
-a {
-  text-underline-offset: 4px;
-}
-
-h2, h3 {
-  text-wrap: balance;
-  line-height: 1.25;
-}
-
-h3.font-serif-editorial {
-  font-size: clamp(1.35rem, 2.2vw, 1.875rem);
-  margin-top: 6px;
-}
-
-p {
-  font-size: 14px;
-  line-height: 1.65;
+/* The amber ring disappears on the light receipt (1.5:1); use near-black there. */
+.receipt :focus-visible {
+  outline-color: #1c1917 !important;
 }
 
 main .text-xs, .dialog-panel .text-xs {
@@ -171,20 +211,67 @@ main .tracking-widest, .dialog-panel .tracking-widest {
   letter-spacing: .08em;
 }
 
+/* Skip-link target: focus lands here programmatically, no ring around the whole page. */
+#main-content:focus {
+  outline: none !important;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.skip-link {
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top));
+  left: 8px;
+  z-index: 100;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #f59e0b;
+  color: #0c0a09;
+  font-weight: 700;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+.app-header {
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 .app-shell {
   padding-bottom: calc(108px + env(safe-area-inset-bottom));
 }
 
 .bottom-nav {
   padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
-.bottom-nav button {
+/* Landscape phones: keep content clear of the notch. */
+@media (orientation: landscape) and (max-height: 500px) {
+  main {
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
+  }
+}
+
+.bottom-nav a {
+  min-height: var(--control-height);
   border: 1px solid transparent;
   min-width: 0;
 }
 
-.bottom-nav button[aria-current] {
+.bottom-nav a[aria-current] {
   border-color: #f59e0b59;
 }
 
@@ -324,7 +411,8 @@ main .flex.justify-between > *,
   color: #065f46;
 }
 
-[data-paused=true], [data-paused=true] * {
+[data-paused=true], [data-paused=true] *,
+:root[data-motion=paused] *, :root[data-motion=paused] *::before, :root[data-motion=paused] *::after {
   animation-play-state: paused !important;
 }
 
@@ -344,11 +432,11 @@ main .flex.justify-between > *,
 @media (max-width: 639px) {
   header > div:first-child { flex-wrap: wrap; gap: 8px; }
   header > div:first-child > div { flex: 1; justify-content: flex-end; min-width: 0; }
-  header button.sm\:hidden { max-width: 136px; min-width: 0; }
+  .mobile-city-trigger { max-width: 136px; min-width: 0; }
   .dialog-sheet { align-items: flex-end; padding: 0; }
   .dialog-sheet .dialog-panel { max-height: calc(100dvh - 20px); border-radius: 24px 24px 0 0; }
   .dialog-sheet .dialog-panel > div { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
-  main .mt-4.pt-3.flex { flex-wrap: wrap; }
+  .timeline-footer { flex-wrap: wrap; }
   .token-popover {
     position: fixed;
     left: 16px;
@@ -361,16 +449,20 @@ main .flex.justify-between > *,
 
 @media (max-width: 359px) {
   header > div:first-child > div { flex-basis: 100%; }
-  header button.sm\:hidden { flex: 1; max-width: none; }
+  .mobile-city-trigger { flex: 1; max-width: none; }
   .bottom-nav span { font-size: 11px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
-  .animate-smog, .pack-stick { animation: none !important; }
+  .animate-smog, .pack-stick, .animate-pulse { animation: none !important; }
   .pack-stick { transition: opacity 100ms; }
   .dialog-panel, .tab-content { animation: view-in 100ms; }
   .dialog-panel[data-open=false] { animation: none; opacity: 0; }
+}
+
+@media (pointer: fine) {
+  html { overscroll-behavior: none; }
 }
 
 @media print {

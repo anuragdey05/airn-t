@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { Dialog } from './Dialog';
 import {
   ACTIVITY_LEVELS,
@@ -6,6 +6,20 @@ import {
   EconomicBreakdown,
 } from '../lib/economics';
 import { X, Sliders, Wind, ShieldCheck, RotateCcw } from 'lucide-react';
+
+// The PM2.5 simulator uses a log scale so clean, 1-cig and 5-cig thresholds are all reachable
+// and the tick labels below the track sit at their true positions.
+const PM_MIN = 1;
+const PM_MAX = 350;
+const SLIDER_MAX = 1000;
+const pmToSlider = (pm: number) =>
+  Math.round((Math.log(Math.min(PM_MAX, Math.max(PM_MIN, pm))) / Math.log(PM_MAX)) * SLIDER_MAX);
+const sliderToPm = (pos: number) => Math.round(Math.exp((pos / SLIDER_MAX) * Math.log(PM_MAX)));
+const PM_TICKS = [
+  { pm: 5, label: 'clean' },
+  { pm: 22, label: '1 cig' },
+  { pm: 110, label: '5 cigs' },
+];
 
 interface ExposureBottomSheetProps {
   isOpen: boolean;
@@ -40,21 +54,25 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
   onChangeCravingUtility,
   economics,
 }) => {
-
+  const ids = {
+    pm: useId(),
+    hours: useId(),
+    activity: useId(),
+    purifier: useId(),
+    craving: useId(),
+  };
 
   return (
     <Dialog open={isOpen} onClose={onClose} label="Tune exposure and simulate AQI" sheet>
-      <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-[#13100E] border-t-2 sm:border-2 border-stone-700/90 p-5 sm:p-6 shadow-2xl max-h-[88vh] overflow-y-auto">
-        {/* Drag handle for mobile */}
-        <div className="w-12 h-1.5 rounded-full bg-stone-700 mx-auto mb-3 sm:hidden" />
+      <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-panel border border-stone-700/90 p-5 sm:p-6 shadow-2xl max-h-[88vh] overflow-y-auto">
 
         {/* Header + Live Preview Pill */}
         <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-800">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-amber-400" />
-            <h3 className="text-base font-semibold text-stone-100">
+            <h2 className="text-base font-semibold text-stone-100">
               Tune Exposure &amp; Simulate AQI
-            </h3>
+            </h2>
           </div>
           <button
             type="button"
@@ -67,7 +85,11 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
         </div>
 
         {/* Sticky Live Output Mini-Bar */}
-        <div className="p-3 rounded-2xl bg-stone-950 border border-amber-500/30 mb-5 flex items-center justify-between font-mono-code text-xs">
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          className="p-3 rounded-2xl bg-stone-950 border border-amber-500/30 mb-5 flex items-center justify-between font-mono-code text-xs"
+        >
           <div>
             <span className="text-xs text-stone-400 block uppercase">
               Passive Cigarettes
@@ -90,10 +112,10 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
           {/* 1. Hypothetical AQI / PM2.5 Simulator */}
           <div className="p-3.5 rounded-2xl bg-stone-950/90 border border-stone-800">
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="font-mono-code text-stone-300 flex items-center gap-1.5">
+              <label htmlFor={ids.pm} className="font-mono-code text-stone-300 flex items-center gap-1.5">
                 <Wind className="w-3.5 h-3.5 text-amber-400" />
                 <span>Simulate PM2.5 / AQI:</span>
-              </span>
+              </label>
               <div className="flex items-center gap-2">
                 <span className="font-mono-code text-amber-300 font-bold">
                   {activePm25.toFixed(0)} µg/m³ (AQI {economics.usAqi})
@@ -102,38 +124,45 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
                   <button
                     type="button"
                     onClick={() => onChangeManualPm25(null)}
-                    className="px-2 py-0.5 rounded bg-stone-800 text-xs font-mono-code text-amber-300 flex items-center gap-1 cursor-pointer"
+                    className="px-2 py-0.5 rounded bg-stone-800 hover:bg-stone-700 text-xs font-mono-code text-amber-300 flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    <RotateCcw className="w-2.5 h-2.5" />
-                    <span>Live</span>
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset to Live</span>
                   </button>
                 )}
               </div>
             </div>
             <input
+              id={ids.pm}
               type="range"
-              min="1"
-              max="350"
-              step="1"
-              aria-label="Simulated PM2.5 in micrograms per cubic meter"
-              value={activePm25}
-              onChange={(e) => onChangeManualPm25(parseFloat(e.target.value))}
+              min="0"
+              max={SLIDER_MAX}
+              step="10"
+              value={pmToSlider(activePm25)}
+              aria-valuetext={`${activePm25.toFixed(0)} micrograms per cubic meter, US AQI ${economics.usAqi}`}
+              onChange={(e) => onChangeManualPm25(sliderToPm(parseFloat(e.target.value)))}
               className="w-full noir-slider"
             />
-            <div className="flex justify-between text-xs font-mono-code text-stone-400 mt-1">
-              <span>Clean (5)</span>
-              <span>1 Cig (22)</span>
-              <span>5 Cigs (110)</span>
-              <span>15+ Cigs (350)</span>
+            <div className="relative h-9 text-xs font-mono-code text-stone-400 mt-1" aria-hidden="true">
+              {PM_TICKS.map(({ pm, label }) => (
+                <span
+                  key={pm}
+                  className="absolute top-0 -translate-x-1/2 text-center leading-tight whitespace-nowrap"
+                  style={{ left: `${(pmToSlider(pm) / SLIDER_MAX) * 100}%` }}
+                >
+                  <span className="block text-stone-300">{pm}</span>
+                  {label}
+                </span>
+              ))}
             </div>
           </div>
 
           {/* 2. Hours Outdoors */}
           <div>
             <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-stone-300 font-medium">
+              <label htmlFor={ids.hours} className="text-stone-300 font-medium">
                 Hours Outdoors per Day
-              </span>
+              </label>
               <span className="font-mono-code text-amber-300 font-bold">
                 {hoursOutdoors}h out / {24 - hoursOutdoors}h in
               </span>
@@ -143,7 +172,8 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
               min="0"
               max="24"
               step="0.5"
-              aria-label="Hours outdoors per day"
+              id={ids.hours}
+              aria-valuetext={`${hoursOutdoors} hours outdoors, ${24 - hoursOutdoors} hours indoors`}
               value={hoursOutdoors}
               onChange={(e) => onChangeHoursOutdoors(parseFloat(e.target.value))}
               className="w-full noir-slider"
@@ -153,14 +183,14 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
           {/* 3. Exertion / Activity Level */}
           <div>
             <div className="flex justify-between text-xs mb-2">
-              <span className="text-stone-300 font-medium">
+              <span id={ids.activity} className="text-stone-300 font-medium">
                 Outdoor Activity Level (Breathing Rate)
               </span>
               <span className="font-mono-code text-amber-300">
                 {ACTIVITY_LEVELS[activityLevel].ventilationMultiplier}x intake
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div role="group" aria-labelledby={ids.activity} className="grid grid-cols-2 gap-2">
               {(Object.keys(ACTIVITY_LEVELS) as ActivityLevel[]).map((lvl) => {
                 const meta = ACTIVITY_LEVELS[lvl];
                 const active = activityLevel === lvl;
@@ -173,7 +203,7 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
                     className={`p-2.5 rounded-xl border text-left transition-colors cursor-pointer ${
                       active
                         ? 'bg-amber-500/20 border-amber-500/50 text-amber-200'
-                        : 'bg-stone-950 border-stone-800 text-stone-400'
+                        : 'bg-stone-950 border-stone-800 text-stone-400 hover:border-stone-600 hover:text-stone-200'
                     }`}
                   >
                     <div className="text-xs font-semibold flex items-center justify-between">
@@ -197,9 +227,9 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
                 }`}
               />
               <div className="min-w-0">
-                <div className="text-xs font-medium text-stone-200">
+                <label htmlFor={ids.purifier} className="block text-xs font-medium text-stone-200 cursor-pointer">
                   Indoor Air Purifier (HEPA)
-                </div>
+                </label>
                 <div className="text-xs text-stone-400">
                   Cuts indoor PM2.5 infiltration from 55% to 15%
                 </div>
@@ -207,14 +237,14 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
             </div>
             <button
               type="button"
+              id={ids.purifier}
               role="switch"
               aria-checked={indoorPurifier}
-              aria-label="Indoor HEPA air purifier"
               onClick={onTogglePurifier}
               className={`px-3 py-1 rounded-lg text-xs font-mono-code font-semibold border transition-colors cursor-pointer shrink-0 ${
                 indoorPurifier
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-stone-900 text-stone-400 border-stone-700'
+                  : 'bg-stone-900 text-stone-400 border-stone-700 hover:text-stone-200 hover:border-stone-500'
               }`}
             >
               {indoorPurifier ? 'ON' : 'OFF'}
@@ -224,9 +254,9 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
           {/* 5. Personal Craving / Hedonic Desire */}
           <div>
             <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-stone-300 font-medium">
+              <label htmlFor={ids.craving} className="text-stone-300 font-medium">
                 Your Nicotine Craving / Desire for a Cigarette
-              </span>
+              </label>
               <span className="font-mono-code text-rose-300 font-bold">
                 {baselineCravingUtility} / 100
               </span>
@@ -236,7 +266,8 @@ export const ExposureBottomSheet: React.FC<ExposureBottomSheetProps> = ({
               min="5"
               max="95"
               step="5"
-              aria-label="Nicotine craving"
+              id={ids.craving}
+              aria-valuetext={`Craving ${baselineCravingUtility} out of 100`}
               value={baselineCravingUtility}
               onChange={(e) => onChangeCravingUtility(parseInt(e.target.value, 10))}
               className="w-full noir-slider"
