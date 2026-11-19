@@ -1,0 +1,19 @@
+src/components/cigarette-pack.css
+  s_1292af1bfe7809::t_dc1a5987a6c020 80-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1c9a55ee70e597fbb8d67cfa26e3f44ed2d74cf1",
+  "prompts": {},
+  "sessions": {
+    "s_1292af1bfe7809": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e449-4d1b-7640-8267-1d7e23340e45",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "Anurag Dey <anuragdey2k@gmail.com>"
+    }
+  }
+}
