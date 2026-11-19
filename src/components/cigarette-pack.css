@@ -1,3 +1,9 @@
+@font-face {
+  font-family: Ultra;
+  src: url('/fonts/Ultra-Regular.woff2') format('woff2'), url('/fonts/Ultra-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
 /* A folded paperboard object. Transforms belong to GSAP; textures remain CSS. */
 .physical-pack { padding: 0 24px 0 4px; isolation: isolate; }
 .physical-pack .carton-stage { position: relative; width: min(100%, 332px); height: auto; padding-top: 130px; margin: 0 auto; perspective: 1100px; }
@@ -6,16 +12,16 @@
 .carton-ground { position: absolute; bottom: -15px; left: 5%; width: 100%; height: 34px; background: #000b; border-radius: 50%; filter: blur(12px); transform: skewX(-12deg); }
 .carton-lid { position: absolute; z-index: 1; left: 0; top: -122px; width: 100%; height: 100px; transform-origin: center bottom; transform: rotateX(22deg); transform-style: preserve-3d; }
 .carton-lid-inner { position: absolute; inset: 0; border: 1px solid #8d7d60; border-radius: 3px 3px 0 0; background: linear-gradient(100deg, #95886e, #c1b599 12%, #e1d6ba 48%, #b7a98b 86%, #8c7f67); box-shadow: inset 0 0 0 5px #b2a58b, inset 0 -12px 17px #44362540, 0 -1px 0 #eee5cd; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #584c38; }
-.carton-lid-inner > span { font: italic 38px var(--font-serif); opacity: .6; }
+.carton-lid-inner > span { font: 30px Ultra, Georgia, serif; transform: scaleX(.82); opacity: .6; }
 .carton-lid-inner small { font: 8px var(--font-mono); letter-spacing: .12em; opacity: .8; text-align: center; }
 .carton-lid-edge { position: absolute; left: 0; right: 0; top: 0; height: 7px; background: linear-gradient(#322e27, #575044, #22201b); border-top: 1px solid #a28c61; }
 .carton-cavity { position: absolute; top: -48px; left: 0; right: 0; height: 66px; background: linear-gradient(90deg, #544b3e, #0b0a08 12%, #14120e 85%, #83745d); border: 1px solid #72654f; }
 .carton-tray { position: absolute; z-index: 3; top: -106px; left: 8px; right: 8px; height: 135px; }
-.carton-row { position: absolute; display: grid; grid-template-columns: repeat(10,minmax(0,1fr)); gap: 5px; width: 100%; height: 126px; clip-path: inset(-25px -8px 0); }
+.carton-row { position: absolute; display: grid; grid-template-columns: repeat(10,minmax(0,1fr)); gap: 5px; width: 100%; height: 126px; clip-path: inset(-108px -5px 0); }
 .carton-row-back { left: 4px; top: -7px; width: calc(100% - 8px); filter: brightness(.65); }
 .carton-row-front { left: 0; top: 14px; }
 .carton-slot { position: relative; height: 100%; }
-.physical-pack .carton-cigarette { display: flex; flex-direction: column; height: 127px; width: 100%; border-radius: 45% 45% 3px 3px / 4px 4px 2px 2px; overflow: hidden; box-shadow: 3px 2px 5px #0007; transform: translateY(72px); animation: none; transition: none; }
+.physical-pack .carton-cigarette { height: 127px; width: 100%; overflow: visible; transform: translateY(72px); animation: none; transition: none; }
 .cigarette-end { display: block; flex: 0 0 5px; position: relative; z-index: 1; width: 100%; border-radius: 50%; background: radial-gradient(ellipse,#6b4826,#332619 70%,#d7c9a3 75%); box-shadow: 0 1px 0 #0007; }
 .cigarette-lit { background: radial-gradient(ellipse at 45% 30%,#c9c5bb 0 14%,#66635c 20% 35%,#b5afa4 40% 50%,#3e3730 60%,#ed6521 74%,#ca3a0a 85%); }
 .cigarette-lit::after { content:''; position:absolute; inset:3px 0 -2px; background:#f87927; opacity:.5; border-radius:50%; animation: coal-breathe 2.7s ease-in-out infinite alternate; }
@@ -31,34 +37,84 @@
 .carton-side small { writing-mode:vertical-rl; font:7px var(--font-mono); margin-top:auto; }
 .carton-barcode { width:13px; height:55px; margin:20px 0 10px; background:repeating-linear-gradient(0deg,#b4ac8a 0 1px,transparent 1px 3px,#b4ac8a 3px 5px,transparent 5px 6px); }
 .carton-brand { text-align:center; color:#e4d4a5; }
-.carton-brand > span { font:italic 64px/.95 var(--font-serif); letter-spacing:-.04em; text-shadow:0 1px #000,0 -1px #f8df9d55; }
+.carton-brand > span { display:inline-block; font: 62px/.95 Ultra, Georgia, serif; transform:scaleX(.79); letter-spacing:-.04em; text-shadow:0 1px #000,0 -1px #f8df9d55; }
 .carton-brand small { display:block; margin-top:10px; font:10px var(--font-mono); text-transform:uppercase; letter-spacing:.22em; overflow-wrap:anywhere; }
 .carton-gold-rule { height:3px; margin:20px -20px 18px; background:linear-gradient(90deg,#6c542a,#dfc88d 25%,#b69c61 60%,#6e542b); border-top:1px solid #e3d0a655; }
-.carton-telemetry { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:10px; color:#bfb9a6; }
+.carton-telemetry { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:11px; color:#bfb9a6; }
+.carton-aqi { display:inline-flex; align-items:center; gap:6px; color:#f0eadb; font-weight:700; }
+.carton-aqi > i { width:9px; height:9px; border-radius:2px; box-shadow:0 0 0 1px #0008; }
 .carton-total { display:flex; justify-content:center; align-items:baseline; gap:8px; margin:12px 0 4px; color:#f0eadb; }
 .carton-total > .text-6xl { font-size:64px; line-height:1; letter-spacing:-.04em; }
 .carton-plus { font:24px var(--font-mono); color:#fb7185; }
-.carton-dose-label { text-align:center; font:10px var(--font-mono); text-transform:uppercase; letter-spacing:.12em; color:#d0ba83; }
+.carton-dose-label { text-align:center; font:11px var(--font-mono); text-transform:uppercase; letter-spacing:.12em; color:#d0ba83; }
 .physical-pack .carton-frequency { font-size:11px; line-height:1.5; color:#bcb8a9; text-align:center; margin:10px auto 18px; max-width:30ch; }
 .carton-overflow { color:#fda4af; text-align:center; }
 .carton-warning { position:relative; background:#e9e4d6; border:1px solid #0a0a08; padding:10px; color:#25251e; box-shadow:0 1px 0 #ffffff30; }
-.carton-warning > div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px; border-bottom:1px solid #49483a; padding-bottom:5px; margin-bottom:6px; font:8px var(--font-mono); }
+.carton-warning > div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px; border-bottom:1px solid #49483a; padding-bottom:5px; margin-bottom:6px; font:10px var(--font-mono); }
 .physical-pack .carton-warning p { font-size:11px; line-height:1.45; font-weight:600; }
 .carton-bottom-seam { height:3px; margin:12px -18px -10px; border-top:1px solid #0009; background:#ffffff04; }
 .carton-extra { position:absolute; z-index:6; bottom:0; right:12px; width:44px; height:160px; display:flex; align-items:center; flex-direction:column; visibility:hidden; opacity:0; transform:translateY(92px); transform-origin:center bottom; }
 .carton-extra-tag { white-space:nowrap; font:9px var(--font-mono); color:#fecdd3; background:#712b39; padding:3px 6px; border:1px solid #b76375; margin-bottom:10px; }
-.extra-cylinder { display:flex; flex-direction:column; height:132px; width:20px; border-radius:45% 45% 2px 2px / 4px 4px 2px 2px; overflow:hidden; box-shadow:5px 5px 8px #0008; }
-.carton-smoke { position:absolute; left:18%; top:-140px; width:50%; height:70px; z-index:7; pointer-events:none; }
-.carton-smoke i { position:absolute; bottom:0; width:25px; height:65px; border-radius:50%; border-left:9px solid #e5e2d126; filter:blur(5px); animation:carton-smoke-drift 4.5s ease-out infinite; }
-.carton-smoke i:nth-child(2) { left:45%; animation-delay:-1.5s; height:90px; }
-.carton-smoke i:nth-child(3) { left:85%; animation-delay:-3s; width:35px; }
-.carton-replay { display:flex; justify-content:center; align-items:center; gap:8px; margin:24px auto 0; font:11px var(--font-mono); color:#a8a29e; padding:0 12px; border-radius:6px; }
+.extra-cylinder { display:flex; flex-direction:column; height:132px; width:20px; border-radius:45% 45% 2px 2px / 4px 4px 2px 2px; position:relative; box-shadow:5px 5px 8px #0008; }
+.carton-controls { display:flex; justify-content:center; flex-wrap:wrap; gap:4px; margin:24px auto 0; }
+.carton-replay { display:flex; justify-content:center; align-items:center; gap:8px; font:12px var(--font-mono); color:#a8a29e; padding:0 12px; border-radius:6px; }
 .carton-replay:hover:not(:disabled) { color:#e5d1a0; }
 .carton-replay:disabled { display:none; }
 @keyframes coal-breathe { to { opacity:.2; } }
-@keyframes carton-smoke-drift { 0% { opacity:0; transform:translateY(10px) scaleX(.5) rotate(-8deg); } 25% { opacity:.75; } 100% { opacity:0; transform:translateY(-80px) translateX(22px) scaleX(1.8) rotate(15deg); } }
-@media (max-width:359px) { .carton-face { padding-left:15px; padding-right:15px; } .carton-gold-rule { margin-left:-15px; margin-right:-15px; } .carton-row { gap:4px; } .carton-telemetry { font-size:9px; } }
-@media (prefers-reduced-motion:reduce) { .carton-smoke i, .cigarette-lit::after { animation:none; } .carton-smoke { opacity:.35; } }
+@media (max-width:359px) { .carton-face { padding-left:15px; padding-right:15px; } .carton-gold-rule { margin-left:-15px; margin-right:-15px; } .carton-row { gap:4px; } .carton-telemetry { font-size:10px; } }
 
 [data-paused=true] .cigarette-lit::after { animation-play-state: paused; }
-@media (max-width:359px) { .carton-extra { right:28px; } }
+@media (max-width: 420px) { .carton-extra { right: 42px; } }
+
+.carton-foil { transform-origin: center bottom; }
+.carton-cylinder {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 4px 4px 2px 2px;
+  box-shadow: 3px 2px 5px #0007;
+}
+
+.carton-tip-smoke {
+  position: absolute;
+  pointer-events: none;
+  bottom: calc(100% - 3px);
+  left: 50%;
+  width: 0;
+  height: 0;
+  z-index: 2;
+}
+
+.carton-tip-smoke i {
+  position: absolute;
+  bottom: 0;
+  left: -11px;
+  width: 22px;
+  height: 56px;
+  border-radius: 60% 65% 35% 45%;
+  background: radial-gradient(ellipse at 50% 72%, #e8e0c953, transparent 68%);
+  filter: blur(3px);
+  transform-origin: bottom center;
+  animation: tip-wisp 3.8s linear infinite;
+}
+
+.carton-tip-smoke i + i {
+  animation-delay: -1.9s;
+  animation-duration: 4.5s;
+  width: 29px;
+  height: 65px;
+}
+
+.carton-slot:nth-child(even) .carton-tip-smoke i { animation-direction: alternate; }
+@keyframes tip-wisp {
+  0% { opacity: 0; transform: translate3d(0, 6px, 0) scale(.4) rotate(-12deg); }
+  23% { opacity: .8; }
+  58% { transform: translate3d(-5px, -24px, 0) scale(.9, 1.1) rotate(-24deg); }
+  100% { opacity: 0; transform: translate3d(15px, -64px, 0) scale(1.6, 1.25) rotate(21deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carton-tip-smoke { display: none; }
+  .cigarette-lit::after { animation: none; }
+}

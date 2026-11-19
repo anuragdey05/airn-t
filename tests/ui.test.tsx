@@ -117,7 +117,7 @@ describe('physical pack preview', () => {
     const extra = screen.getByLabelText('Remove extra cigarette preview', { selector: 'button' }) as HTMLButtonElement;
     expect(extra.disabled).toBe(true);
     expect(extra.tabIndex).toBe(-1);
-    expect(screen.getByLabelText('Replay pack opening animation').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: /replay opening/i }).hasAttribute('disabled')).toBe(true);
     rerender(<AnimatedCigarettePack {...props} showMarginalCigPreview />);
     expect(extra.disabled).toBe(false);
     expect(extra.style.visibility).toBe('inherit');
