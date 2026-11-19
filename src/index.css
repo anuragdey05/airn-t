@@ -73,6 +73,110 @@
   to { opacity: 0; transform: translateY(12px); }
 }
 
+@keyframes flameFlicker {
+  0%, 100% {
+    transform: scaleY(1) scaleX(1) rotate(-2deg);
+    opacity: 0.95;
+  }
+  25% {
+    transform: scaleY(1.12) scaleX(0.94) rotate(2deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleY(0.93) scaleX(1.05) rotate(-3deg);
+    opacity: 0.88;
+  }
+  75% {
+    transform: scaleY(1.08) scaleX(0.96) rotate(1deg);
+    opacity: 0.98;
+  }
+}
+
+@keyframes cherryInhale {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.85)) drop-shadow(0 0 18px rgba(239, 68, 68, 0.6));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 18px rgba(254, 240, 138, 1)) drop-shadow(0 0 34px rgba(249, 115, 22, 0.95)) drop-shadow(0 0 52px rgba(239, 68, 68, 0.85));
+    transform: scale(1.08);
+  }
+}
+
+@keyframes smokePlumeCurl {
+  0% {
+    stroke-dashoffset: 220;
+    opacity: 0;
+    transform: translateY(8px) scaleX(0.9);
+  }
+  30% {
+    opacity: 0.65;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.15;
+    transform: translateY(-36px) scaleX(1.25);
+  }
+}
+
+@keyframes smokeCondenseText {
+  0% {
+    opacity: 0;
+    filter: blur(14px);
+    transform: translateY(18px) scale(0.94);
+  }
+  60% {
+    opacity: 1;
+    filter: blur(2px);
+    transform: translateY(-2px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes hotStampIn {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.35em;
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: 0.16em;
+    filter: blur(0px);
+  }
+}
+
+.animate-flame {
+  animation: flameFlicker 0.38s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.animate-cherry {
+  animation: cherryInhale 1.4s ease-in-out infinite;
+}
+
+.animate-smoke-curl-1 {
+  stroke-dasharray: 220;
+  animation: smokePlumeCurl 2.6s ease-out infinite;
+}
+
+.animate-smoke-curl-2 {
+  stroke-dasharray: 220;
+  animation: smokePlumeCurl 3.2s ease-out infinite 0.55s;
+}
+
+.animate-smoke-reveal {
+  animation: smokeCondenseText 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-hot-stamp {
+  animation: hotStampIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .animate-smog {
   animation: smogDrift 18s ease-in-out infinite;
 }

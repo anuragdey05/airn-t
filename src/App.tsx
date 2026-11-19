@@ -23,6 +23,10 @@ import { AnimatedCigarettePack } from './components/AnimatedCigarettePack';
 import { ShouldYouSmokeCard } from './components/ShouldYouSmokeCard';
 import { ExposureBottomSheet } from './components/ExposureBottomSheet';
 import { WarningReceiptModal } from './components/WarningReceiptModal';
+import {
+  IgnitionPhase,
+  LocationIgnitionGate,
+} from './components/LocationIgnitionGate';
 import { scrollToTop, triggerHaptic } from './lib/haptics';
 import { safeStorage } from './lib/safeStorage';
 import { CitySearchResults, onCitySearchKeyDown } from './components/CitySearchResults';
@@ -88,6 +92,13 @@ const isPlainClick = (event: React.MouseEvent) =>
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>(parseInitialTab);
   const [isInitialResolving, setIsInitialResolving] = useState<boolean>(true);
+  const [ignitionPhase, setIgnitionPhase] = useState<IgnitionPhase>(() => {
+    if (typeof window === 'undefined') return 'idle';
+    const hasDeepLinkCity = Boolean(
+      new URLSearchParams(window.location.search).get('city')?.trim()
+    );
+    return hasDeepLinkCity ? 'igniting' : 'idle';
+  });
 
   // Primary City Air Quality State
   const [cityData, setCityData] = useState<CityAirQualityData>(() => ({
@@ -236,38 +247,52 @@ export function App() {
     };
   }, [showTokenPopover]);
 
-  // On mount: check ?city= deep link first; otherwise detect user's real location
+  // Coordinate the cigarette-lighting animation with async location/AQI loading
+  const runIgnitionSequence = async (loader: () => Promise<CityAirQualityData>) => {
+    const request = ++primaryRequest.current;
+    setLocationError('');
+    setIsDetectingLoc(true);
+    setIgnitionPhase('igniting');
+    const minBurnMs = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      ? 250
+      : 1150;
+    const startedAt = Date.now();
+
+    try {
+      const detected = await loader();
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < minBurnMs) {
+        await new Promise((r) => window.setTimeout(r, minBurnMs - elapsed));
+      }
+      if (request !== primaryRequest.current) return;
+      applyPrimaryCity(detected);
+      setIgnitionPhase('revealing');
+    } catch {
+      if (request === primaryRequest.current) {
+        setLocationError('Could not detect your location. Pick a city below or search above.');
+        setIsInitialResolving(false);
+        setIgnitionPhase('done');
+      }
+    } finally {
+      if (request === primaryRequest.current) {
+        setIsDetectingLoc(false);
+      }
+    }
+  };
+
+  // On mount: if ?city= deep link is present, auto-ignite it; otherwise wait for user to spark the LocationIgnitionGate
   useEffect(() => {
     let cancelled = false;
-    const request = ++primaryRequest.current;
-    setIsDetectingLoc(true);
 
     const urlParams = new URLSearchParams(window.location.search);
     const deepLinkCity = urlParams.get('city')?.trim();
 
-    const initialPromise = deepLinkCity
-      ? fetchAirQualityByCityName(deepLinkCity, waqiToken).then(
-          (res) => res ?? detectUserLocation(waqiToken)
-        )
-      : detectUserLocation(waqiToken);
-
-    initialPromise
-      .then((detected) => {
-        if (!cancelled && request === primaryRequest.current) {
-          applyPrimaryCity(detected);
-        }
-      })
-      .catch(() => {
-        if (!cancelled && request === primaryRequest.current) {
-          setLocationError('Could not detect your location. Pick a city below or search above.');
-          setIsInitialResolving(false);
-        }
-      })
-      .finally(() => {
-        if (!cancelled && request === primaryRequest.current) {
-          setIsDetectingLoc(false);
-        }
+    if (deepLinkCity) {
+      runIgnitionSequence(async () => {
+        const res = await fetchAirQualityByCityName(deepLinkCity, waqiToken);
+        return res ?? detectUserLocation(waqiToken);
       });
+    }
 
     fetchGlobalBenchmarksLive()
       .then((liveList) => {
@@ -351,21 +376,27 @@ export function App() {
     }
   };
 
-  const handleDetectMyLocation = async () => {
+  const handleDetectMyLocation = () => {
     triggerHaptic(10);
-    const request = ++primaryRequest.current;
-    setLocationError('');
-    setIsDetectingLoc(true);
-    try {
-      const detected = await detectUserLocation(waqiToken);
-      if (request !== primaryRequest.current) return;
-      applyPrimaryCity(detected);
-    } catch {
-      if (request === primaryRequest.current)
-        setLocationError('Could not load your location. Please search for a city.');
-    } finally {
-      if (request === primaryRequest.current) setIsDetectingLoc(false);
-    }
+    runIgnitionSequence(() => detectUserLocation(waqiToken));
+  };
+
+  const handleSparkPresetFromGate = (seed: BenchmarkCitySeed) => {
+    const liveMatch = benchmarks.find((b) => b.id === seed.id);
+    runIgnitionSequence(async () => {
+      const fresh = await fetchAirQualityForCoords({
+        city: seed.city,
+        region: seed.region,
+        country: seed.country,
+        countryCode: seed.countryCode,
+        latitude: seed.latitude,
+        longitude: seed.longitude,
+        fallbackPm25: liveMatch ? liveMatch.livePm25 : seed.fallbackPm25,
+        waqiToken,
+      });
+      setPackPriceUsd(seed.localPackPriceUsd);
+      return fresh;
+    });
   };
 
   const handleSaveWaqiToken = async (newToken: string) => {
@@ -466,6 +497,16 @@ export function App() {
 
   return (
     <div className="app-shell min-h-screen relative bg-surface text-paper pb-24">
+      <LocationIgnitionGate
+        phase={ignitionPhase}
+        resolvedCity={cityData.id === 'resolving' ? null : cityData}
+        cigsPerDay={economics.effectiveCigsPerDay}
+        usAqi={economics.usAqi}
+        severity={severity}
+        onSparkLocation={handleDetectMyLocation}
+        onSparkPresetCity={handleSparkPresetFromGate}
+        onCompleteReveal={() => setIgnitionPhase('done')}
+      />
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>

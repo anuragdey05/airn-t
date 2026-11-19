@@ -6,6 +6,7 @@ import { useCitySearch } from '../src/hooks/useCitySearch';
 import { Dialog } from '../src/components/Dialog';
 import { AnimatedCigarettePack } from '../src/components/AnimatedCigarettePack';
 import { WarningReceiptModal } from '../src/components/WarningReceiptModal';
+import { LocationIgnitionGate } from '../src/components/LocationIgnitionGate';
 import { calculateCigaretteEconomics, getAqiSeverity } from '../src/lib/economics';
 import {
   searchCitiesWorldwide,
@@ -241,5 +242,78 @@ describe('24h mean PM2.5, local timezone & share helpers', () => {
     expect(canvas.width).toBe(1080);
     expect(canvas.height).toBe(1920);
     expect(mockCtx.fillText).toHaveBeenCalledWith('My air already smokes', expect.any(Number), expect.any(Number));
+  });
+
+  it('transitions LocationIgnitionGate from idle disclaimer -> igniting -> smoke city reveal -> done', () => {
+    const onSpark = vi.fn();
+    const onComplete = vi.fn();
+    const sampleCity = {
+      id: 'delhi-in',
+      city: 'New Delhi',
+      region: 'Delhi NCR',
+      country: 'India',
+      countryCode: 'IN',
+      latitude: 28.61,
+      longitude: 77.21,
+      pm25: 88.0,
+      pm10: 140.0,
+      no2: 24.0,
+      o3: 40.0,
+      usAqi: 168,
+      source: 'Open-Meteo CAMS Global' as const,
+      updatedAt: '12:00',
+      dailyTimeline: [],
+    };
+
+    const { rerender } = render(
+      <LocationIgnitionGate
+        phase="idle"
+        resolvedCity={null}
+        cigsPerDay={4.0}
+        usAqi={168}
+        severity={getAqiSeverity(168)}
+        onSparkLocation={onSpark}
+        onSparkPresetCity={() => {}}
+        onCompleteReveal={onComplete}
+      />
+    );
+
+    expect(screen.getByText(/Enable Location Permission:/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Light Up & Allow Location/i }));
+    expect(onSpark).toHaveBeenCalledOnce();
+
+    rerender(
+      <LocationIgnitionGate
+        phase="igniting"
+        resolvedCity={null}
+        cigsPerDay={4.0}
+        usAqi={168}
+        severity={getAqiSeverity(168)}
+        onSparkLocation={onSpark}
+        onSparkPresetCity={() => {}}
+        onCompleteReveal={onComplete}
+      />
+    );
+    expect(screen.getByText(/Igniting Atmospheric Telemetry/i)).toBeTruthy();
+
+    rerender(
+      <LocationIgnitionGate
+        phase="revealing"
+        resolvedCity={sampleCity}
+        cigsPerDay={4.0}
+        usAqi={168}
+        severity={getAqiSeverity(168)}
+        onSparkLocation={onSpark}
+        onSparkPresetCity={() => {}}
+        onCompleteReveal={onComplete}
+      />
+    );
+    expect(screen.getByText('New Delhi')).toBeTruthy();
+    expect(screen.getByText(/28\.61°N, 77\.21°E/i)).toBeTruthy();
+
+    act(() => {
+      vi.advanceTimersByTime(2300);
+    });
+    expect(onComplete).toHaveBeenCalledOnce();
   });
 });
